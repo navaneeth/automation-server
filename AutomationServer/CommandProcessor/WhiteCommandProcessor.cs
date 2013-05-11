@@ -12,6 +12,7 @@ namespace AutomationServer.CommandProcessor
     internal sealed class WhiteCommandProcessor : ICommandProcessor
     {
         private readonly Dictionary<string, Action<HttpListenerContext>> commands;
+        private object target = null;
 
         public WhiteCommandProcessor()
         {
@@ -30,6 +31,9 @@ namespace AutomationServer.CommandProcessor
                 context.Respond(400, string.Format("'{0}' is a invalid command", command));
                 return;
             }
+
+            if (!TryGetTarget(context))
+                return;
 
             try
             {
@@ -58,10 +62,6 @@ namespace AutomationServer.CommandProcessor
 
         private void GetWindow(HttpListenerContext context)
         {
-            object target;
-            if (!TryGetTarget(context, out target))
-                return;
-
             var windowTitle = context.Request.QueryString["1"];
             if (string.IsNullOrEmpty(windowTitle))
             {
@@ -90,10 +90,6 @@ namespace AutomationServer.CommandProcessor
 
         private void EnterText(HttpListenerContext context)
         {
-            object target;
-            if (!TryGetTarget(context, out target))
-                return;
-
             var textToEnter = context.Request.QueryString["1"];
             if (string.IsNullOrEmpty(textToEnter))
             {
@@ -118,10 +114,8 @@ namespace AutomationServer.CommandProcessor
             }
         }
 
-        private static bool TryGetTarget(HttpListenerContext context, out object @object)
+        private bool TryGetTarget(HttpListenerContext context)
         {
-            @object = null;
-
             string refIdInRequest = context.Request.QueryString["ref"];
             if (string.IsNullOrEmpty(refIdInRequest))
             {
@@ -142,7 +136,7 @@ namespace AutomationServer.CommandProcessor
                 return false;
             }
 
-            @object = Objects.Get(refId);
+            target = Objects.Get(refId);
             return true;
         }
     }
