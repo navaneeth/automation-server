@@ -22,5 +22,10 @@ namespace AutomationServer.Core
         {
             return objects.ContainsKey(refId);
         }
+
+        public static void Remove(int refId)
+        {
+            objects.Remove(refId);
+        }
     }
 }

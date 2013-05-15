@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using AutomationServer.Extensions;
 
@@ -42,12 +43,14 @@ namespace AutomationServer.Core
                     continue;
                 }
                 
-                if ("quit" == command)
+                if ("quit" == command && request.QueryString["ref"] == null)
                 {
                     context.Respond(200, "Bye bye!");
                     execute = false;
                     continue;
                 }
+
+                Console.WriteLine("Processing " + command);
 
                 CommandProcessor.Instance.Process(context, command);
             }
