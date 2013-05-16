@@ -29,8 +29,11 @@ namespace AutomationServer.CommandProcessor
                     {"getmenuitem", GetMenuItem},
                     {"entertext", EnterText},
                     {"click", Click},
+                    
                     {"getcombobox", GetComboBox},
-                    {"selecttext", SelectText},  
+                    {"selecttext", SelectText},
+                    {"iseditable", IsEditable},
+  
                     {"getbutton", GetButton},
                     {"close", Close},
                 };
@@ -70,6 +73,7 @@ namespace AutomationServer.CommandProcessor
                 context.Respond(400, "Expected application path to launch, found none");
                 return;
             }
+            Console.WriteLine(applicationPath);
 
             Application application = Application.Launch(applicationPath);
             int objectId = Objects.Put(application);
@@ -272,6 +276,19 @@ namespace AutomationServer.CommandProcessor
             {
                 context.Respond(400, "Invalid action on " + currentRefId);
                 return;
+            }
+        }
+
+        private void IsEditable(HttpListenerContext context)
+        {
+            if (target is ComboBox)
+            {
+                var combo = target as ComboBox;
+                context.Respond(200, combo.IsEditable.ToString());
+            }
+            else
+            {
+                context.Respond(400, "Invalid action");
             }
         }
 
