@@ -24,8 +24,15 @@ namespace AutomationServer.CommandProcessor
             commands = new Dictionary<string, Action<HttpListenerContext>>
                 {
                     {"launch", Launch},
+                    {"attach", AttachToExistingProcess},
                     {"getwindow", GetWindow},
+
                     {"getmenubar", GetMenubar},
+                    {"gettitle", GetTitle},
+                    {"isenabled", IsEnabled},
+                    {"doubleclick", DoubleClick},
+                    {"isoffscreen", IsOffScreen},
+
                     {"getmenuitem", GetMenuItem},
                     {"entertext", EnterText},
                     {"click", Click},
@@ -48,7 +55,7 @@ namespace AutomationServer.CommandProcessor
             }
 
             // Launch doesn't need a ref id
-            if (command != "launch")
+            if (command != "launch" && command != "attach")
             {
                 if (!TryGetTarget(context))
                     return;
@@ -88,6 +95,21 @@ namespace AutomationServer.CommandProcessor
             context.RespondOk(objectId);
         }
 
+        private void AttachToExistingProcess(HttpListenerContext context)
+        {
+            string parameter = context.Request.QueryString["1"];
+            if (string.IsNullOrEmpty(parameter))
+                throw new ParameterMissingException("process id", 1);
+
+            int processId;
+            if (!int.TryParse(parameter, out processId))
+                throw new InputException("Process id should be a number");
+
+            Application application = Application.Attach(processId);
+            int objectId = Objects.Put(application);
+            context.RespondOk(objectId);
+        }
+
         private void GetWindow(HttpListenerContext context)
         {
             var windowTitle = context.Request.QueryString["1"];
@@ -101,6 +123,54 @@ namespace AutomationServer.CommandProcessor
             Window window = application.GetWindow(windowTitle);
             int objectId = Objects.Put(window);
             context.RespondOk(objectId);
+        }
+
+        private void GetTitle(HttpListenerContext context)
+        {
+            if (target is Window)
+            {
+                context.RespondOk((target as Window).Title);
+            }
+            else
+            {
+                throw new InvalidCommandException();
+            }
+        }
+
+        private void IsEnabled(HttpListenerContext context)
+        {
+            if (target is IUIItem)
+            {
+                context.RespondOk((target as IUIItem).Enabled.ToString());
+            }
+            else
+            {
+                throw new InvalidCommandException();
+            }
+        }
+
+        private void IsOffScreen(HttpListenerContext context)
+        {
+            if (target is IUIItem)
+            {
+                context.RespondOk((target as IUIItem).IsOffScreen.ToString());
+            }
+            else
+            {
+                throw new InvalidCommandException();
+            }
+        }
+
+        private void DoubleClick(HttpListenerContext context)
+        {
+            if (target is IUIItem)
+            {
+                (target as IUIItem).DoubleClick();
+            }
+            else
+            {
+                throw new InvalidCommandException();
+            }
         }
 
         /// <summary>
