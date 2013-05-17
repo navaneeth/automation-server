@@ -32,6 +32,8 @@ namespace AutomationServer.CommandProcessor
                     {"isenabled", IsEnabled},
                     {"doubleclick", DoubleClick},
                     {"isoffscreen", IsOffScreen},
+                    {"setfocus", SetFocus},
+                    {"isfocused", IsFocused},
 
                     {"getmenuitem", GetMenuItem},
                     {"entertext", EnterText},
@@ -154,6 +156,30 @@ namespace AutomationServer.CommandProcessor
             if (target is IUIItem)
             {
                 context.RespondOk((target as IUIItem).IsOffScreen.ToString());
+            }
+            else
+            {
+                throw new InvalidCommandException();
+            }
+        }
+
+        private void SetFocus(HttpListenerContext context)
+        {
+            if (target is IUIItem)
+            {
+                (target as IUIItem).Focus();
+            }
+            else
+            {
+                throw new InvalidCommandException();
+            }
+        }
+
+        private void IsFocused(HttpListenerContext context)
+        {
+            if (target is IUIItem)
+            {
+                context.RespondOk((target as IUIItem).IsFocussed.ToString());
             }
             else
             {
