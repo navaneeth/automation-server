@@ -16,7 +16,7 @@ namespace AutomationServer.CommandProcessor
     internal sealed class WhiteCommandProcessor : ICommandProcessor
     {
         private readonly Dictionary<string, Action<HttpListenerContext>> commands;
-        private object target = null;
+        private object target;
         private int currentRefId = -1;
 
         public WhiteCommandProcessor()
@@ -43,7 +43,7 @@ namespace AutomationServer.CommandProcessor
         {
             if (!commands.ContainsKey(command))
             {
-                context.Respond(400, string.Format("'{0}' is a invalid command", command));
+                context.Respond(400, string.Format("Unknown command - '{0}'", command));
                 return;
             }
 
@@ -59,6 +59,18 @@ namespace AutomationServer.CommandProcessor
                 var handler = commands[command];
                 handler(context);
             }
+            catch (ParameterMissingException e)
+            {
+                context.Respond(400, e.Message);
+            }
+            catch (InvalidCommandException)
+            {
+                context.Respond(400, string.Format("'{0}' is not valid for the specified target", command));
+            }
+            catch (InputException e)
+            {
+                context.Respond(400, e.Message);
+            }
             catch (Exception e)
             {
                 context.Respond(500, e.Message);
@@ -69,37 +81,26 @@ namespace AutomationServer.CommandProcessor
         {
             var applicationPath = context.Request.QueryString["1"];
             if (string.IsNullOrEmpty(applicationPath))
-            {
-                context.Respond(400, "Expected application path to launch, found none");
-                return;
-            }
-            Console.WriteLine(applicationPath);
+                throw new ParameterMissingException("application path", 1);
 
             Application application = Application.Launch(applicationPath);
             int objectId = Objects.Put(application);
-            context.Respond(200, objectId.ToString());
+            context.RespondOk(objectId);
         }
 
         private void GetWindow(HttpListenerContext context)
         {
             var windowTitle = context.Request.QueryString["1"];
             if (string.IsNullOrEmpty(windowTitle))
-            {
-                context.Respond(400, "Expected window title, found none");
-                return;
-            }
+                throw new ParameterMissingException("window title", 1);
 
-            if (!(target is Application))
-            {
-                context.Respond(400, "Can't execute command on this object");
-                return;
-            }
-
-            
             var application = target as Application;
+            if (application == null)
+                throw new InvalidCommandException();
+
             Window window = application.GetWindow(windowTitle);
             int objectId = Objects.Put(window);
-            context.Respond(200, objectId.ToString());
+            context.RespondOk(objectId);
         }
 
         /// <summary>
@@ -112,33 +113,23 @@ namespace AutomationServer.CommandProcessor
             var textToEnter = context.Request.QueryString["1"];
             var windowId = context.Request.QueryString["2"];
             if (string.IsNullOrEmpty(textToEnter))
-            {
-                context.Respond(400, "Expected text to enter, found none");
-                return;
-            }
+                throw new ParameterMissingException("text to enter", 1);            
 
             if (string.IsNullOrEmpty(windowId))
-            {
-                context.Respond(400, "Expected a window id, found none");
-                return;
-            }
+                throw new ParameterMissingException("window ref id", 2);
 
-            if (!(target is IUIItem))
-            {
-                context.Respond(400, "Can't execute command on this object");
-                return;
-            }
-            
             if (!Objects.HasObject(Convert.ToInt32(windowId)))
-            {
-                context.Respond(400, "Invalid window");
-                return;
-            }
+                throw new InputException("Invalid reference to the window");
 
-            var window = (Window) Objects.Get(Convert.ToInt32(windowId));
+            var window = Objects.Get(Convert.ToInt32(windowId)) as Window;
+            if (window == null)
+                throw new InvalidCommandException();
+
             var uiItem = target as IUIItem;
-            uiItem.Enter(textToEnter);
+            if (uiItem == null)
+                throw new InvalidCommandException();
 
+            uiItem.Enter(textToEnter);
             // This is required because uiItem.Enter() returns before it completes. We need to hold until the operation is done
             window.WaitWhileBusy();
             context.Respond(200);
@@ -164,9 +155,7 @@ namespace AutomationServer.CommandProcessor
                 context.Respond(200);
             }
             else
-            {
-                context.Respond(400, "Can't execute command on this object");
-            }
+                throw new InvalidCommandException();
         }
 
         private void GetMenubar(HttpListenerContext context)
@@ -175,40 +164,33 @@ namespace AutomationServer.CommandProcessor
             {
                 MenuBar menubar = (target as Window).MenuBar;
                 int menubarRefId = Objects.Put(menubar);
-                context.Respond(200, menubarRefId.ToString());
+                context.RespondOk(menubarRefId);
             }
             else
-            {
-                context.Respond(400, "Invalid action on " + currentRefId);
-            }
+                throw new InvalidCommandException();
         }
 
         private void GetMenuItem(HttpListenerContext context)
         {
             string menuItemToFind = context.Request.QueryString["1"];
             if (String.IsNullOrEmpty(menuItemToFind))
-            {
-                context.Respond(400, "Expected a menu item label, found none");
-                return;
-            }
+                throw new ParameterMissingException("menu item label", 1);
 
             if (target is MenuBar)
             {
                 var menubar = target as MenuBar;
                 Menu menuItem = menubar.MenuItem(menuItemToFind);
                 int menuItemId = Objects.Put(menuItem);
-                context.Respond(200, menuItemId.ToString());
+                context.RespondOk(menuItemId);
             }
             else if (target is Menu)
             {
                 Menu menuItem = (target as Menu).SubMenu(menuItemToFind);
                 int menuItemId = Objects.Put(menuItem);
-                context.Respond(200, menuItemId.ToString());
+                context.RespondOk(menuItemId);
             }
             else
-            {
-                context.Respond(400, "Invalid action on " + currentRefId);
-            }
+                throw new InvalidCommandException();
         }
 
         private void Click(HttpListenerContext context)
@@ -219,42 +201,31 @@ namespace AutomationServer.CommandProcessor
                 context.Respond(200);
             }
             else
-            {
-                context.Respond(400, "Invalid action on " + currentRefId);
-            }
+                throw new InvalidCommandException();
         }
 
         private void GetComboBox(HttpListenerContext context)
         {
             if (!(target is Window))
-            {
-                context.Respond(400, "Invalid action on " + currentRefId);
-                return;
-            }
+                throw new InvalidCommandException();
 
             var by = context.Request.QueryString["by"];
             if (string.IsNullOrEmpty(by))
-            {
-                context.Respond(400, "Expected a 'by' parameter, found none");
-                return;
-            }
+                throw new ParameterMissingException("by");
 
             switch (by)
             {
                 case "automationid":
                     var automationId = context.Request.QueryString["1"];
                     if (string.IsNullOrEmpty(automationId))
-                    {
-                        context.Respond(400, "Expected automation id, found none");
-                        return;
-                    }
+                        throw new ParameterMissingException("automation id", 1);
+
                     var comboBox = (target as Window).Get<ComboBox>(SearchCriteria.ByAutomationId(automationId));
                     int comboId = Objects.Put(comboBox);
-                    context.Respond(200, comboId.ToString());
+                    context.RespondOk(comboId);
                     break;
                 default:
-                    context.Respond(400, "Incorrect value for 'by'");
-                    break;
+                    throw new InputException("Incorrect value for 'by'");
             }
         }
 
@@ -262,10 +233,7 @@ namespace AutomationServer.CommandProcessor
         {
             string textToSelect = context.Request.QueryString["1"];
             if (String.IsNullOrEmpty(textToSelect))
-            {
-                context.Respond(400, "Expected text to select, found none");
-                return;
-            }
+                throw new ParameterMissingException("text to select", 1);
 
             if (target is ListControl)
             {
@@ -273,10 +241,7 @@ namespace AutomationServer.CommandProcessor
                 context.Respond(200);
             }
             else
-            {
-                context.Respond(400, "Invalid action on " + currentRefId);
-                return;
-            }
+                throw new InvalidCommandException();
         }
 
         private void IsEditable(HttpListenerContext context)
@@ -287,54 +252,41 @@ namespace AutomationServer.CommandProcessor
                 context.Respond(200, combo.IsEditable.ToString());
             }
             else
-            {
-                context.Respond(400, "Invalid action");
-            }
+                throw new InvalidCommandException();
         }
 
         private void GetButton(HttpListenerContext context)
         {
             if (!(target is Window))
-            {
-                context.Respond(400, "Invalid action on " + currentRefId);
-                return;
-            }
+                throw new InvalidCommandException();
 
             var by = context.Request.QueryString["by"];
             if (string.IsNullOrEmpty(by))
-            {
-                context.Respond(400, "Expected a 'by' parameter, found none");
-                return;
-            }
+                throw new ParameterMissingException("by");
 
-            Button button = null;
+            Button button;
             switch (by)
             {
                 case "automationid":
                     var automationId = context.Request.QueryString["1"];
                     if (string.IsNullOrEmpty(automationId))
-                    {
-                        context.Respond(400, "Expected automation id, found none");
-                        return;
-                    }
+                        throw new ParameterMissingException("automation id", 1);
+
                     button = (target as Window).Get<Button>(SearchCriteria.ByAutomationId(automationId));                    
                     break;
                 case "text":
                     var text = context.Request.QueryString["1"];
                     if (string.IsNullOrEmpty(text))
-                    {
-                        context.Respond(400, "Expected text, found none");
-                        return;
-                    }
+                        throw new ParameterMissingException("text");
+
                     button = (target as Window).Get<Button>(SearchCriteria.ByText(text));                    
                     break;
                 default:
-                    context.Respond(400, "Incorrect value for 'by'");
-                    return;
+                    throw new InputException("Incorrect value for 'by'");
             }
 
             int buttonId = Objects.Put(button);
-            context.Respond(200, buttonId.ToString());
+            context.RespondOk(buttonId);
         }
 
 

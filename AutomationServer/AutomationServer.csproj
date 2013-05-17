@@ -13,7 +13,7 @@
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x86</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -23,7 +23,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x86</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -49,7 +49,10 @@
   <ItemGroup>
     <Compile Include="CommandProcessor\WhiteCommandProcessor.cs" />
     <Compile Include="Core\ICommandProcessor.cs" />
+    <Compile Include="Core\InputException.cs" />
+    <Compile Include="Core\InvalidCommandException.cs" />
     <Compile Include="Core\Objects.cs" />
+    <Compile Include="Core\ParameterMissingException.cs" />
     <Compile Include="Core\Server.cs" />
     <Compile Include="Extensions\HttpListenerContextExtensions.cs" />
     <Compile Include="Main.cs" />
