@@ -38,11 +38,15 @@ namespace AutomationServer.CommandProcessor
 
                     {"getmenuitem", GetMenuItem},
                     {"entertext", EnterText},
-                    {"click", Click},
+                    {"click", Click},                    
                     
                     {"getcombobox", GetComboBox},
                     {"selecttext", SelectText},
-                    {"iseditable", IsEditable},                    
+                    {"iseditable", IsEditable},
+                    {"getselecteditem", GetSelectedItem},
+
+                    // ListItem
+                    {"gettext", GetText},
   
                     {"getbutton", GetButton},
                     {"close", Close},
@@ -132,74 +136,38 @@ namespace AutomationServer.CommandProcessor
 
         private void GetTitle()
         {
-            if (target is Window)
-            {
-                context.RespondOk((target as Window).Title);
-            }
-            else
-            {
-                throw new InvalidCommandException();
-            }
+            var window = EnsureTargetIs<Window>();
+            context.RespondOk(window.Title);            
         }
 
         private void IsEnabled()
         {
-            if (target is IUIItem)
-            {
-                context.RespondOk((target as IUIItem).Enabled.ToString());
-            }
-            else
-            {
-                throw new InvalidCommandException();
-            }
+            var uiItem = EnsureTargetIs<IUIItem>();
+            context.RespondOk(uiItem.Enabled.ToString());
         }
 
         private void IsOffScreen()
         {
-            if (target is IUIItem)
-            {
-                context.RespondOk((target as IUIItem).IsOffScreen.ToString());
-            }
-            else
-            {
-                throw new InvalidCommandException();
-            }
+            var uiItem = EnsureTargetIs<IUIItem>();
+            context.RespondOk(uiItem.IsOffScreen.ToString());            
         }
 
         private void SetFocus()
         {
-            if (target is IUIItem)
-            {
-                (target as IUIItem).Focus();
-            }
-            else
-            {
-                throw new InvalidCommandException();
-            }
+            var uiItem = EnsureTargetIs<IUIItem>();
+            uiItem.Focus();            
         }
 
         private void IsFocused()
         {
-            if (target is IUIItem)
-            {
-                context.RespondOk((target as IUIItem).IsFocussed.ToString());
-            }
-            else
-            {
-                throw new InvalidCommandException();
-            }
+            var uiItem = EnsureTargetIs<IUIItem>();
+            context.RespondOk(uiItem.IsFocussed.ToString());            
         }
 
         private void DoubleClick()
         {
-            if (target is IUIItem)
-            {
-                (target as IUIItem).DoubleClick();
-            }
-            else
-            {
-                throw new InvalidCommandException();
-            }
+            var uiItem = EnsureTargetIs<IUIItem>();
+            uiItem.DoubleClick();            
         }
 
         /// <summary>
@@ -259,14 +227,15 @@ namespace AutomationServer.CommandProcessor
 
         private void GetMenubar()
         {
-            if (target is Window)
+            var window = EnsureTargetIs<Window>();
+            MenuBar menubar = window.MenuBar;
+            if (menubar != null)
             {
-                MenuBar menubar = (target as Window).MenuBar;
                 int menubarRefId = Objects.Put(menubar);
                 context.RespondOk(menubarRefId);
             }
-            else
-                throw new InvalidCommandException();
+            else            
+                context.RespondOk();                     
         }
 
         private void GetMenuItem()
@@ -294,13 +263,9 @@ namespace AutomationServer.CommandProcessor
 
         private void Click()
         {
-            if (target is IUIItem)
-            {
-                (target as IUIItem).Click();
-                context.Respond(200);
-            }
-            else
-                throw new InvalidCommandException();
+            var uiItem = EnsureTargetIs<IUIItem>();
+            uiItem.Click();
+            context.RespondOk();            
         }
 
         private void GetComboBox()
@@ -334,31 +299,36 @@ namespace AutomationServer.CommandProcessor
             if (String.IsNullOrEmpty(textToSelect))
                 throw new ParameterMissingException("text to select", 1);
 
-            if (target is ListControl)
-            {
-               (target as ListControl).Select(textToSelect);
-                context.Respond(200);
-            }
-            else
-                throw new InvalidCommandException();
+            var listControl = EnsureTargetIs<ListControl>();
+            listControl.Select(textToSelect);
+            context.RespondOk();            
         }
 
         private void IsEditable()
         {
-            if (target is ComboBox)
-            {
-                var combo = target as ComboBox;
-                context.Respond(200, combo.IsEditable.ToString());
-            }
+            var combo = EnsureTargetIs<ComboBox>();
+            context.RespondOk(combo.IsEditable.ToString());
+        }
+        
+        private void GetSelectedItem()
+        {
+            var list = EnsureTargetIs<ListControl>();
+            var item = list.SelectedItem;
+            if (item != null)
+                context.RespondOk(Objects.Put(item));
             else
-                throw new InvalidCommandException();
-        }        
+                context.RespondOk();
+        }
+
+        private void GetText()
+        {
+            var listItem = EnsureTargetIs<ListItem>();
+            context.RespondOk(listItem.Text);
+        }
 
         private void GetButton()
         {
-            if (!(target is Window))
-                throw new InvalidCommandException();
-
+            var window = EnsureTargetIs<Window>();
             var by = context.Request.QueryString["by"];
             if (string.IsNullOrEmpty(by))
                 throw new ParameterMissingException("by");
@@ -371,14 +341,14 @@ namespace AutomationServer.CommandProcessor
                     if (string.IsNullOrEmpty(automationId))
                         throw new ParameterMissingException("automation id", 1);
 
-                    button = (target as Window).Get<Button>(SearchCriteria.ByAutomationId(automationId));                    
+                    button = window.Get<Button>(SearchCriteria.ByAutomationId(automationId));                    
                     break;
                 case "text":
                     var text = context.Request.QueryString["1"];
                     if (string.IsNullOrEmpty(text))
                         throw new ParameterMissingException("text");
 
-                    button = (target as Window).Get<Button>(SearchCriteria.ByText(text));                    
+                    button = window.Get<Button>(SearchCriteria.ByText(text));                    
                     break;
                 default:
                     throw new InputException("Incorrect value for 'by'");
@@ -413,6 +383,15 @@ namespace AutomationServer.CommandProcessor
 
             target = Objects.Get(currentRefId);
             return true;
+        }
+
+        private T EnsureTargetIs<T>()  where T : class
+        {
+            var result = target as T;
+            if (result == null)
+                throw new InvalidCommandException();
+
+            return result;
         }
     }
 }
