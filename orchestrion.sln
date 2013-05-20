@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "orchestrion", "AutomationServer\orchestrion.csproj", "{4CD5431A-FDF4-493C-A7F1-93E622534977}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "orchestrion", "orchestrion\orchestrion.csproj", "{4CD5431A-FDF4-493C-A7F1-93E622534977}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

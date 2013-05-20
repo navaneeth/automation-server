@@ -1,5 +1,3 @@
-automation-server
+orchestrion
 =================
-Simple server which support UI automation.
-
-THIS IS WORK IN PROGRESS
+Enabling windows automation to any languages
