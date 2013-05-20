@@ -35,10 +35,14 @@ namespace Orchestrion.CommandProcessor
                     {"isoffscreen", IsOffScreen},
                     {"setfocus", SetFocus},
                     {"isfocused", IsFocused},
+                    {"isvisible", IsVisible},
+                    {"getname", GetName},
 
                     {"getmenuitem", GetMenuItem},
                     {"entertext", EnterText},
-                    {"click", Click},                    
+                    {"click", Click},
+                    {"rightclick", RightClick},
+                    {"toggle", Toggle},
                     
                     {"getcombobox", GetComboBox},
                     {"selecttext", SelectText},
@@ -172,7 +176,19 @@ namespace Orchestrion.CommandProcessor
         private void IsFocused()
         {
             var uiItem = EnsureTargetIs<IUIItem>();
-            context.RespondOk(uiItem.IsFocussed.ToString());            
+            context.RespondOk(uiItem.IsFocussed.ToString());
+        }
+
+        private void IsVisible()
+        {
+            var uiItem = EnsureTargetIs<IUIItem>();
+            context.RespondOk(uiItem.Visible.ToString());
+        }
+
+        private void GetName()
+        {
+            var uiItem = EnsureTargetIs<IUIItem>();
+            context.RespondOk(uiItem.Name);
         }
 
         private void DoubleClick()
@@ -277,6 +293,13 @@ namespace Orchestrion.CommandProcessor
             var uiItem = EnsureTargetIs<IUIItem>();
             uiItem.Click();
             context.RespondOk();            
+        }
+
+        private void RightClick()
+        {
+            var uiItem = EnsureTargetIs<IUIItem>();
+            uiItem.RightClick();
+            context.RespondOk();
         }
 
         private void GetComboBox()
@@ -399,6 +422,13 @@ namespace Orchestrion.CommandProcessor
         {
             var listItems = EnsureTargetIs<ListItems>();
             context.RespondOk(listItems.Count);
+        }
+
+        private void Toggle()
+        {
+            var button = EnsureTargetIs<Button>();
+            button.Toggle();
+            context.RespondOk();
         }
         
         private void GetText()
