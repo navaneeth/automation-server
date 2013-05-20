@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Text;
-using AutomationServer.Core;
-using AutomationServer.Extensions;
+using Orchestrion.Core;
+using Orchestrion.Extensions;
 using White.Core;
 using White.Core.UIItems;
 using White.Core.UIItems.Finders;
@@ -12,7 +11,7 @@ using White.Core.UIItems.MenuItems;
 using White.Core.UIItems.WindowItems;
 using White.Core.UIItems.WindowStripControls;
 
-namespace AutomationServer.CommandProcessor
+namespace Orchestrion.CommandProcessor
 {
     internal sealed class WhiteCommandProcessor : ICommandProcessor
     {

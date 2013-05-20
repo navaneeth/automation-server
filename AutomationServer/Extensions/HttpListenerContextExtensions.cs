@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Net;
 using System.Text;
 
-namespace AutomationServer.Extensions
+namespace Orchestrion.Extensions
 {
     public static class HttpListenerContextExtensions
     {

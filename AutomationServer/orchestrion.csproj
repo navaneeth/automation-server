@@ -7,8 +7,8 @@
     <ProjectGuid>{4CD5431A-FDF4-493C-A7F1-93E622534977}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>AutomationServer</RootNamespace>
-    <AssemblyName>AutomationServer</AssemblyName>
+    <RootNamespace>Orchestrion</RootNamespace>
+    <AssemblyName>orchestrion</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>

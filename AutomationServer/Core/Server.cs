@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
-using AutomationServer.Extensions;
+using Orchestrion.Extensions;
 
-namespace AutomationServer.Core
+namespace Orchestrion.Core
 {
     /// <summary>
     /// Implements a simple HTTP server which understands the request format

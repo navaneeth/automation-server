@@ -1,7 +1,7 @@
 ﻿using System.Net;
-using AutomationServer.CommandProcessor;
+using Orchestrion.CommandProcessor;
 
-namespace AutomationServer.Core
+namespace Orchestrion.Core
 {
     internal interface ICommandProcessor
     {

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace AutomationServer.Core
+namespace Orchestrion.Core
 {
     internal static class Objects
     {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace AutomationServer.Core
+namespace Orchestrion.Core
 {
     internal sealed class InputException : Exception
     {

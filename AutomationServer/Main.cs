@@ -1,7 +1,6 @@
-﻿using System;
-using AutomationServer.Core;
+﻿using Orchestrion.Core;
 
-namespace WindowsTestServer
+namespace Orchestrion
 {
     public class Program
     {
