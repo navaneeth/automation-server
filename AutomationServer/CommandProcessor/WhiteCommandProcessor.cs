@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Text;
 using AutomationServer.Core;
 using AutomationServer.Extensions;
 using White.Core;
@@ -44,9 +45,15 @@ namespace AutomationServer.CommandProcessor
                     {"selecttext", SelectText},
                     {"iseditable", IsEditable},
                     {"getselecteditem", GetSelectedItem},
+                    {"getlistitems", GetListItems},
 
                     // ListItem
                     {"gettext", GetText},
+                    {"checklistitem", CheckListItem},
+                    {"unchecklistitem", UnCheckListItem},
+                    {"selectlistitem", SelectListItem},
+                    {"isselected", IsSelected},
+                    {"ischecked", IsChecked},
   
                     {"getbutton", GetButton},
                     {"close", Close},
@@ -312,10 +319,31 @@ namespace AutomationServer.CommandProcessor
         
         private void GetSelectedItem()
         {
+            if (target is ListControl)
+            {
+                var item = (target as ListControl).SelectedItem;
+                if (item != null)
+                    context.RespondOk(Objects.Put(item));
+                else
+                    context.RespondOk();
+            }
+            else if (target is ListItems)
+            {
+                var item = (target as ListItems).SelectedItem;
+                if (item != null)
+                    context.RespondOk(Objects.Put(item));
+                else
+                    context.RespondOk();
+            }
+            else
+                throw new InvalidCommandException();
+        }
+
+        private void GetListItems()
+        {
             var list = EnsureTargetIs<ListControl>();
-            var item = list.SelectedItem;
-            if (item != null)
-                context.RespondOk(Objects.Put(item));
+            if (list.Items.Count != 0)
+                context.RespondOk(Objects.Put(list.Items));
             else
                 context.RespondOk();
         }
@@ -324,6 +352,39 @@ namespace AutomationServer.CommandProcessor
         {
             var listItem = EnsureTargetIs<ListItem>();
             context.RespondOk(listItem.Text);
+        }
+
+        private void CheckListItem()
+        {
+            var listItem = EnsureTargetIs<ListItem>();
+            listItem.Check();
+            context.RespondOk();
+        }
+
+        private void UnCheckListItem()
+        {
+            var listItem = EnsureTargetIs<ListItem>();
+            listItem.UnCheck();
+            context.RespondOk();
+        }
+
+        private void SelectListItem()
+        {
+            var listItem = EnsureTargetIs<ListItem>();
+            listItem.Select();
+            context.RespondOk();
+        }
+
+        private void IsSelected()
+        {
+            var listItem = EnsureTargetIs<ListItem>();
+            context.RespondOk(listItem.IsSelected.ToString());
+        }
+
+        private void IsChecked()
+        {
+            var listItem = EnsureTargetIs<ListItem>();
+            context.RespondOk(listItem.Checked.ToString());
         }
 
         private void GetButton()
