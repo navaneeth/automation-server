@@ -15,13 +15,14 @@ namespace AutomationServer.CommandProcessor
 {
     internal sealed class WhiteCommandProcessor : ICommandProcessor
     {
-        private readonly Dictionary<string, Action<HttpListenerContext>> commands;
+        private readonly Dictionary<string, Action> commands;
         private object target;
         private int currentRefId = -1;
+        private HttpListenerContext context;
 
         public WhiteCommandProcessor()
         {
-            commands = new Dictionary<string, Action<HttpListenerContext>>
+            commands = new Dictionary<string, Action>
                 {
                     {"launch", Launch},
                     {"attach", AttachToExistingProcess},
@@ -41,15 +42,17 @@ namespace AutomationServer.CommandProcessor
                     
                     {"getcombobox", GetComboBox},
                     {"selecttext", SelectText},
-                    {"iseditable", IsEditable},
+                    {"iseditable", IsEditable},                    
   
                     {"getbutton", GetButton},
                     {"close", Close},
                 };
         }
 
-        public void Process(HttpListenerContext context, string command)
+        public void Process(HttpListenerContext c, string command)
         {
+            context = c;
+
             if (!commands.ContainsKey(command))
             {
                 context.Respond(400, string.Format("Unknown command - '{0}'", command));
@@ -59,14 +62,14 @@ namespace AutomationServer.CommandProcessor
             // Launch doesn't need a ref id
             if (command != "launch" && command != "attach")
             {
-                if (!TryGetTarget(context))
+                if (!TryGetTarget())
                     return;
             }
 
             try
             {
                 var handler = commands[command];
-                handler(context);
+                handler();
             }
             catch (ParameterMissingException e)
             {
@@ -86,7 +89,7 @@ namespace AutomationServer.CommandProcessor
             }
         }
 
-        private void Launch(HttpListenerContext context)
+        private void Launch()
         {
             var applicationPath = context.Request.QueryString["1"];
             if (string.IsNullOrEmpty(applicationPath))
@@ -97,7 +100,7 @@ namespace AutomationServer.CommandProcessor
             context.RespondOk(objectId);
         }
 
-        private void AttachToExistingProcess(HttpListenerContext context)
+        private void AttachToExistingProcess()
         {
             string parameter = context.Request.QueryString["1"];
             if (string.IsNullOrEmpty(parameter))
@@ -112,7 +115,7 @@ namespace AutomationServer.CommandProcessor
             context.RespondOk(objectId);
         }
 
-        private void GetWindow(HttpListenerContext context)
+        private void GetWindow()
         {
             var windowTitle = context.Request.QueryString["1"];
             if (string.IsNullOrEmpty(windowTitle))
@@ -127,7 +130,7 @@ namespace AutomationServer.CommandProcessor
             context.RespondOk(objectId);
         }
 
-        private void GetTitle(HttpListenerContext context)
+        private void GetTitle()
         {
             if (target is Window)
             {
@@ -139,7 +142,7 @@ namespace AutomationServer.CommandProcessor
             }
         }
 
-        private void IsEnabled(HttpListenerContext context)
+        private void IsEnabled()
         {
             if (target is IUIItem)
             {
@@ -151,7 +154,7 @@ namespace AutomationServer.CommandProcessor
             }
         }
 
-        private void IsOffScreen(HttpListenerContext context)
+        private void IsOffScreen()
         {
             if (target is IUIItem)
             {
@@ -163,7 +166,7 @@ namespace AutomationServer.CommandProcessor
             }
         }
 
-        private void SetFocus(HttpListenerContext context)
+        private void SetFocus()
         {
             if (target is IUIItem)
             {
@@ -175,7 +178,7 @@ namespace AutomationServer.CommandProcessor
             }
         }
 
-        private void IsFocused(HttpListenerContext context)
+        private void IsFocused()
         {
             if (target is IUIItem)
             {
@@ -187,7 +190,7 @@ namespace AutomationServer.CommandProcessor
             }
         }
 
-        private void DoubleClick(HttpListenerContext context)
+        private void DoubleClick()
         {
             if (target is IUIItem)
             {
@@ -204,7 +207,7 @@ namespace AutomationServer.CommandProcessor
         /// 1 - Text to enter
         /// 2 - Parent window id to wait
         /// </summary>        
-        private void EnterText(HttpListenerContext context)
+        private void EnterText()
         {
             var textToEnter = context.Request.QueryString["1"];
             var windowId = context.Request.QueryString["2"];
@@ -231,7 +234,7 @@ namespace AutomationServer.CommandProcessor
             context.Respond(200);
         }
 
-        private void Close(HttpListenerContext context)
+        private void Close()
         {
             if (target is Application)
             {
@@ -254,7 +257,7 @@ namespace AutomationServer.CommandProcessor
                 throw new InvalidCommandException();
         }
 
-        private void GetMenubar(HttpListenerContext context)
+        private void GetMenubar()
         {
             if (target is Window)
             {
@@ -266,7 +269,7 @@ namespace AutomationServer.CommandProcessor
                 throw new InvalidCommandException();
         }
 
-        private void GetMenuItem(HttpListenerContext context)
+        private void GetMenuItem()
         {
             string menuItemToFind = context.Request.QueryString["1"];
             if (String.IsNullOrEmpty(menuItemToFind))
@@ -289,7 +292,7 @@ namespace AutomationServer.CommandProcessor
                 throw new InvalidCommandException();
         }
 
-        private void Click(HttpListenerContext context)
+        private void Click()
         {
             if (target is IUIItem)
             {
@@ -300,7 +303,7 @@ namespace AutomationServer.CommandProcessor
                 throw new InvalidCommandException();
         }
 
-        private void GetComboBox(HttpListenerContext context)
+        private void GetComboBox()
         {
             if (!(target is Window))
                 throw new InvalidCommandException();
@@ -325,7 +328,7 @@ namespace AutomationServer.CommandProcessor
             }
         }
 
-        private void SelectText(HttpListenerContext context)
+        private void SelectText()
         {
             string textToSelect = context.Request.QueryString["1"];
             if (String.IsNullOrEmpty(textToSelect))
@@ -340,7 +343,7 @@ namespace AutomationServer.CommandProcessor
                 throw new InvalidCommandException();
         }
 
-        private void IsEditable(HttpListenerContext context)
+        private void IsEditable()
         {
             if (target is ComboBox)
             {
@@ -349,9 +352,9 @@ namespace AutomationServer.CommandProcessor
             }
             else
                 throw new InvalidCommandException();
-        }
+        }        
 
-        private void GetButton(HttpListenerContext context)
+        private void GetButton()
         {
             if (!(target is Window))
                 throw new InvalidCommandException();
@@ -386,7 +389,7 @@ namespace AutomationServer.CommandProcessor
         }
 
 
-        private bool TryGetTarget(HttpListenerContext context)
+        private bool TryGetTarget()
         {
             string refIdInRequest = context.Request.QueryString["ref"];
             if (string.IsNullOrEmpty(refIdInRequest))
