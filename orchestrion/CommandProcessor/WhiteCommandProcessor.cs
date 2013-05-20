@@ -45,6 +45,11 @@ namespace Orchestrion.CommandProcessor
                     {"iseditable", IsEditable},
                     {"getselecteditem", GetSelectedItem},
                     {"getlistitems", GetListItems},
+                    {"getlistitembyindex", GetListItemByIndex},
+                    {"getlistitembytext", GetListItemByText},
+                    {"getlistitemscount", GetListItemsCount},
+
+                    {"getlistbox", GetListBox},
 
                     // ListItem
                     {"gettext", GetText},
@@ -299,6 +304,28 @@ namespace Orchestrion.CommandProcessor
             }
         }
 
+        private void GetListBox()
+        {
+            var window = EnsureTargetIs<Window>();            
+            var by = context.Request.QueryString["by"];
+            if (string.IsNullOrEmpty(by))
+                throw new ParameterMissingException("by");
+
+            switch (by)
+            {
+                case "automationid":
+                    var automationId = context.Request.QueryString["1"];
+                    if (string.IsNullOrEmpty(automationId))
+                        throw new ParameterMissingException("automation id", 1);
+
+                    var listBox = window.Get<ListBox>(SearchCriteria.ByAutomationId(automationId));
+                    context.RespondOk(Objects.Put(listBox));
+                    break;
+                default:
+                    throw new InputException("Incorrect value for 'by'");
+            }
+        }
+
         private void SelectText()
         {
             string textToSelect = context.Request.QueryString["1"];
@@ -347,6 +374,33 @@ namespace Orchestrion.CommandProcessor
                 context.RespondOk();
         }
 
+        private void GetListItemByIndex()
+        {
+            var listItems = EnsureTargetIs<ListItems>();
+            
+            int index;
+            if (!int.TryParse(GetParameter(1, "index"), out index))
+                throw new InputException("Incorrect value for index");
+
+            if (index < 0)
+                throw new InputException("Invalid index");
+
+            context.RespondOk(Objects.Put(listItems.Item(index)));
+        }
+
+        private void GetListItemByText()
+        {
+            var listItems = EnsureTargetIs<ListItems>();
+            var text = GetParameter(1, "text");
+            context.RespondOk(Objects.Put(listItems.Item(text)));
+        }
+
+        private void GetListItemsCount()
+        {
+            var listItems = EnsureTargetIs<ListItems>();
+            context.RespondOk(listItems.Count);
+        }
+        
         private void GetText()
         {
             var listItem = EnsureTargetIs<ListItem>();
@@ -451,6 +505,15 @@ namespace Orchestrion.CommandProcessor
             if (result == null)
                 throw new InvalidCommandException();
 
+            return result;
+        }
+
+        private string GetParameter(int param, string parameterName)
+        {
+            string result = context.Request.QueryString[param.ToString()];
+            if (string.IsNullOrEmpty(result))
+                throw new ParameterMissingException(parameterName, param);
+            
             return result;
         }
     }
