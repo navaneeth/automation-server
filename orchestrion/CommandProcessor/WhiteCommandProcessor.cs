@@ -9,6 +9,7 @@ using White.Core.UIItems;
 using White.Core.UIItems.Finders;
 using White.Core.UIItems.ListBoxItems;
 using White.Core.UIItems.MenuItems;
+using White.Core.UIItems.Scrolling;
 using White.Core.UIItems.WindowItems;
 using White.Core.UIItems.WindowStripControls;
 
@@ -38,6 +39,16 @@ namespace Orchestrion.CommandProcessor
                     {"isfocused", IsFocused},
                     {"isvisible", IsVisible},
                     {"getname", GetName},
+                    {"canscroll", CanScroll},
+                    {"getminvalue", GetMinValue},
+                    {"getmaxvalue", GetMaxValue},
+                    
+                    {"gethscrollbar", GetHorizontalScrollBar},
+                    {"getvscrollbar", GetVerticalScrollBar},
+                    {"scrollleft", ScrollLeft},
+                    {"scrollright", ScrollRight},
+                    {"scrollup", ScrollUp},
+                    {"scrolldown", ScrollDown},
 
                     {"getmenuitem", GetMenuItem},
                     {"entertext", EnterText},
@@ -56,6 +67,7 @@ namespace Orchestrion.CommandProcessor
 
                     {"getlistbox", GetListBox},
                     {"gettextbox", GetTextBox},
+                    {"getmultilinetextbox", GetMultiLineTextBox},
                     
                     {"gettext", GetText},
                     {"settext", SetText},
@@ -67,7 +79,7 @@ namespace Orchestrion.CommandProcessor
                     {"ischecked", IsChecked},
   
                     {"getbutton", GetButton},
-                    {"close", Close},
+                    {"close", Close},                    
                 };
         }
 
@@ -192,6 +204,83 @@ namespace Orchestrion.CommandProcessor
         {
             var uiItem = EnsureTargetIs<IUIItem>();
             context.RespondOk(uiItem.Name);
+        }
+
+        private void CanScroll()
+        {
+            if (target is IUIItem)
+            {
+                var scrollbars = (target as IUIItem).ScrollBars;
+                context.RespondOk(scrollbars == null ? "false" : scrollbars.CanScroll.ToString());
+            }
+            else if (target is IHScrollBar)
+            {
+                context.RespondOk((target as IHScrollBar).IsScrollable.ToString());
+            }
+            else if (target is IVScrollBar)
+            {
+                context.RespondOk((target as IVScrollBar).IsScrollable.ToString());
+            }
+            else
+                throw new InvalidCommandException();
+        }
+
+        private void GetMaxValue()
+        {
+            var scrollbar = EnsureTargetIs<IScrollBar>();
+            context.RespondOk(scrollbar.MaximumValue.ToString(CultureInfo.InvariantCulture));
+        }
+
+        private void GetMinValue()
+        {
+            var scrollbar = EnsureTargetIs<IScrollBar>();
+            context.RespondOk(scrollbar.MinimumValue.ToString(CultureInfo.InvariantCulture));
+        }
+
+        private void GetHorizontalScrollBar()
+        {
+            var uiItem = EnsureTargetIs<IUIItem>();
+            if (uiItem.ScrollBars != null && uiItem.ScrollBars.CanScroll)
+                context.RespondOk(Objects.Put(uiItem.ScrollBars.Horizontal));
+            else
+                context.RespondOk();
+        }
+
+        private void GetVerticalScrollBar()
+        {
+            var uiItem = EnsureTargetIs<IUIItem>();
+            if (uiItem.ScrollBars != null && uiItem.ScrollBars.CanScroll)
+                context.RespondOk(Objects.Put(uiItem.ScrollBars.Vertical));
+            else
+                context.RespondOk();
+        }
+
+        private void ScrollLeft()
+        {
+            var hscroll = EnsureTargetIs<IHScrollBar>();
+            hscroll.ScrollLeft();
+            context.RespondOk();
+        }
+
+        private void ScrollRight()
+        {
+            var hscroll = EnsureTargetIs<IHScrollBar>();
+            hscroll.ScrollRight();
+            context.RespondOk();
+        }
+
+        private void ScrollUp()
+        {
+            var hscroll = EnsureTargetIs<IVScrollBar>();
+            hscroll.ScrollUp();
+            context.RespondOk();
+        }
+
+        private void ScrollDown()
+        {
+            var hscroll = EnsureTargetIs<IVScrollBar>();
+            hscroll.ScrollDown();
+            context.RespondOk();
         }
 
         private void DoubleClick()
@@ -324,6 +413,13 @@ namespace Orchestrion.CommandProcessor
             var window = EnsureTargetIs<Window>();
             var textBox = window.Get<TextBox>(GetSearchCriteria());
             context.RespondOk(Objects.Put(textBox));            
+        }
+
+        public void GetMultiLineTextBox()
+        {
+            var window = EnsureTargetIs<Window>();
+            var textBox = window.Get<MultilineTextBox>(GetSearchCriteria());
+            context.RespondOk(Objects.Put(textBox));
         }
 
         private void SelectText()
