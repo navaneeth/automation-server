@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Net;
 using Orchestrion.Core;
 using Orchestrion.Extensions;
@@ -240,7 +241,7 @@ namespace Orchestrion.CommandProcessor
                 app.Kill();
                 app.Dispose();
                 Objects.Remove(currentRefId);
-                context.Respond(200);
+                context.RespondOk();
             }
             else if (target is Window)
             {
@@ -248,7 +249,7 @@ namespace Orchestrion.CommandProcessor
                 window.Close();
                 window.Dispose();
                 Objects.Remove(currentRefId);
-                context.Respond(200);
+                context.RespondOk();
             }
             else
                 throw new InvalidCommandException();
@@ -306,71 +307,23 @@ namespace Orchestrion.CommandProcessor
 
         private void GetComboBox()
         {
-            if (!(target is Window))
-                throw new InvalidCommandException();
-
-            var by = context.Request.QueryString["by"];
-            if (string.IsNullOrEmpty(by))
-                throw new ParameterMissingException("by");
-
-            switch (by)
-            {
-                case "automationid":
-                    var automationId = context.Request.QueryString["1"];
-                    if (string.IsNullOrEmpty(automationId))
-                        throw new ParameterMissingException("automation id", 1);
-
-                    var comboBox = (target as Window).Get<ComboBox>(SearchCriteria.ByAutomationId(automationId));
-                    int comboId = Objects.Put(comboBox);
-                    context.RespondOk(comboId);
-                    break;
-                default:
-                    throw new InputException("Incorrect value for 'by'");
-            }
-        }
+            var window = EnsureTargetIs<Window>();
+            var comboBox = window.Get<ComboBox>(GetSearchCriteria());
+            context.RespondOk(Objects.Put(comboBox));
+        }        
 
         private void GetListBox()
         {
-            var window = EnsureTargetIs<Window>();            
-            var by = context.Request.QueryString["by"];
-            if (string.IsNullOrEmpty(by))
-                throw new ParameterMissingException("by");
-
-            switch (by)
-            {
-                case "automationid":
-                    var automationId = context.Request.QueryString["1"];
-                    if (string.IsNullOrEmpty(automationId))
-                        throw new ParameterMissingException("automation id", 1);
-
-                    var listBox = window.Get<ListBox>(SearchCriteria.ByAutomationId(automationId));
-                    context.RespondOk(Objects.Put(listBox));
-                    break;
-                default:
-                    throw new InputException("Incorrect value for 'by'");
-            }
+            var window = EnsureTargetIs<Window>();
+            var listBox = window.Get<ListBox>(GetSearchCriteria());
+            context.RespondOk(Objects.Put(listBox));
         }
 
         private void GetTextBox()
         {
             var window = EnsureTargetIs<Window>();
-            var by = context.Request.QueryString["by"];
-            if (string.IsNullOrEmpty(by))
-                throw new ParameterMissingException("by");
-
-            switch (by)
-            {
-                case "automationid":
-                    var automationId = context.Request.QueryString["1"];
-                    if (string.IsNullOrEmpty(automationId))
-                        throw new ParameterMissingException("automation id", 1);
-
-                    var textBox = window.Get<TextBox>(SearchCriteria.ByAutomationId(automationId));
-                    context.RespondOk(Objects.Put(textBox));
-                    break;
-                default:
-                    throw new InputException("Incorrect value for 'by'");
-            }
+            var textBox = window.Get<TextBox>(GetSearchCriteria());
+            context.RespondOk(Objects.Put(textBox));            
         }
 
         private void SelectText()
@@ -521,35 +474,9 @@ namespace Orchestrion.CommandProcessor
         private void GetButton()
         {
             var window = EnsureTargetIs<Window>();
-            var by = context.Request.QueryString["by"];
-            if (string.IsNullOrEmpty(by))
-                throw new ParameterMissingException("by");
-
-            Button button;
-            switch (by)
-            {
-                case "automationid":
-                    var automationId = context.Request.QueryString["1"];
-                    if (string.IsNullOrEmpty(automationId))
-                        throw new ParameterMissingException("automation id", 1);
-
-                    button = window.Get<Button>(SearchCriteria.ByAutomationId(automationId));                    
-                    break;
-                case "text":
-                    var text = context.Request.QueryString["1"];
-                    if (string.IsNullOrEmpty(text))
-                        throw new ParameterMissingException("text");
-
-                    button = window.Get<Button>(SearchCriteria.ByText(text));                    
-                    break;
-                default:
-                    throw new InputException("Incorrect value for 'by'");
-            }
-
-            int buttonId = Objects.Put(button);
-            context.RespondOk(buttonId);
+            var button = window.Get<Button>(GetSearchCriteria());            
+            context.RespondOk(Objects.Put(button));
         }
-
 
         private bool TryGetTarget()
         {
@@ -588,11 +515,36 @@ namespace Orchestrion.CommandProcessor
 
         private string GetParameter(int param, string parameterName)
         {
-            string result = context.Request.QueryString[param.ToString()];
+            string result = context.Request.QueryString[param.ToString(CultureInfo.InvariantCulture)];
             if (string.IsNullOrEmpty(result))
                 throw new ParameterMissingException(parameterName, param);
             
             return result;
+        }
+
+        private SearchCriteria GetSearchCriteria()
+        {
+            var by = context.Request.QueryString["by"];
+            if (string.IsNullOrEmpty(by))
+                throw new ParameterMissingException("by");
+
+            switch (by)
+            {
+                case "automationid":
+                    var automationId = context.Request.QueryString["1"];
+                    if (string.IsNullOrEmpty(automationId))
+                        throw new ParameterMissingException("automation id", 1);
+
+                    return SearchCriteria.ByAutomationId(automationId);
+                case "text":
+                    var text = context.Request.QueryString["1"];
+                    if (string.IsNullOrEmpty(text))
+                        throw new ParameterMissingException("text");
+
+                    return SearchCriteria.ByText(text);
+                default:
+                    throw new InputException("Incorrect value for 'by'");
+            }
         }
     }
 }
