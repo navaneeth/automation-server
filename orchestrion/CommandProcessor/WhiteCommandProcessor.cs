@@ -54,9 +54,11 @@ namespace Orchestrion.CommandProcessor
                     {"getlistitemscount", GetListItemsCount},
 
                     {"getlistbox", GetListBox},
-
-                    // ListItem
+                    {"gettextbox", GetTextBox},
+                    
                     {"gettext", GetText},
+                    {"settext", SetText},
+                    {"isreadonly", IsReadonly},
                     {"checklistitem", CheckListItem},
                     {"unchecklistitem", UnCheckListItem},
                     {"selectlistitem", SelectListItem},
@@ -349,6 +351,28 @@ namespace Orchestrion.CommandProcessor
             }
         }
 
+        private void GetTextBox()
+        {
+            var window = EnsureTargetIs<Window>();
+            var by = context.Request.QueryString["by"];
+            if (string.IsNullOrEmpty(by))
+                throw new ParameterMissingException("by");
+
+            switch (by)
+            {
+                case "automationid":
+                    var automationId = context.Request.QueryString["1"];
+                    if (string.IsNullOrEmpty(automationId))
+                        throw new ParameterMissingException("automation id", 1);
+
+                    var textBox = window.Get<TextBox>(SearchCriteria.ByAutomationId(automationId));
+                    context.RespondOk(Objects.Put(textBox));
+                    break;
+                default:
+                    throw new InputException("Incorrect value for 'by'");
+            }
+        }
+
         private void SelectText()
         {
             string textToSelect = context.Request.QueryString["1"];
@@ -433,8 +457,32 @@ namespace Orchestrion.CommandProcessor
         
         private void GetText()
         {
-            var listItem = EnsureTargetIs<ListItem>();
-            context.RespondOk(listItem.Text);
+            if (target is ListItem)
+            {
+                context.RespondOk((target as ListItem).Text);
+            }
+            else if (target is TextBox)
+            {
+                context.RespondOk((target as TextBox).Text);
+            }
+            else
+                throw new InvalidCommandException();
+        }
+
+        private void SetText()
+        {
+            var textBox = EnsureTargetIs<TextBox>();
+            var textToSet = GetParameter(1, "text");
+
+            // BulkText seems to be more efficient in setting
+            textBox.BulkText = textToSet;
+            context.RespondOk();
+        }
+
+        private void IsReadonly()
+        {
+            var textBox = EnsureTargetIs<TextBox>();
+            context.RespondOk(textBox.IsReadOnly.ToString());
         }
 
         private void CheckListItem()
