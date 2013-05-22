@@ -61,9 +61,10 @@ namespace Orchestrion.CommandProcessor
                     {"iseditable", IsEditable},
                     {"getselecteditem", GetSelectedItem},
                     {"getlistitems", GetListItems},
-                    {"getlistitembyindex", GetListItemByIndex},
-                    {"getlistitembytext", GetListItemByText},
-                    {"getlistitemscount", GetListItemsCount},
+                    {"getitembyindex", GetItemByIndex},
+                    {"getitembytext", GetItemByText},
+                    {"getitemscount", GetItemsCount},
+                    {"getchildren", GetChildren},
 
                     {"getlistbox", GetListBox},
                     {"gettextbox", GetTextBox},
@@ -482,10 +483,8 @@ namespace Orchestrion.CommandProcessor
                 context.RespondOk();
         }
 
-        private void GetListItemByIndex()
+        private void GetItemByIndex()
         {
-            var listItems = EnsureTargetIs<ListItems>();
-            
             int index;
             if (!int.TryParse(GetParameter(1, "index"), out index))
                 throw new InputException("Incorrect value for index");
@@ -493,20 +492,52 @@ namespace Orchestrion.CommandProcessor
             if (index < 0)
                 throw new InputException("Invalid index");
 
-            context.RespondOk(Objects.Put(listItems.Item(index)));
+            if (target is ListItems)
+            {
+                var listItems = target as ListItems;
+                context.RespondOk(Objects.Put(listItems.Item(index)));
+            }
+            else if (target is Menus)
+            {
+                var menuItems = target as Menus;
+                context.RespondOk(Objects.Put(menuItems[index]));
+            }
+            else
+                throw new InvalidCommandException();
         }
 
-        private void GetListItemByText()
+        private void GetItemByText()
         {
             var listItems = EnsureTargetIs<ListItems>();
             var text = GetParameter(1, "text");
             context.RespondOk(Objects.Put(listItems.Item(text)));
         }
 
-        private void GetListItemsCount()
+        private void GetItemsCount()
         {
-            var listItems = EnsureTargetIs<ListItems>();
-            context.RespondOk(listItems.Count);
+            if (target is ListItems)
+            {
+                context.RespondOk((target as ListItems).Count);
+            }
+            else if (target is Menus)
+            {
+                context.RespondOk((target as Menus).Count);
+            }
+            else
+                throw new InvalidCommandException();
+        }
+
+        private void GetChildren()
+        {
+            var menuItem = EnsureTargetIs<Menu>();
+            if (menuItem.ChildMenus != null && menuItem.ChildMenus.Count > 0)
+            {
+                context.RespondOk(Objects.Put(menuItem.ChildMenus));
+            }
+            else
+            {
+                context.RespondOk();
+            }
         }
 
         private void Toggle()
