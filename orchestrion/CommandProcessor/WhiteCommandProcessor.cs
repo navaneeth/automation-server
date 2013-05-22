@@ -68,6 +68,7 @@ namespace Orchestrion.CommandProcessor
                     {"getlistbox", GetListBox},
                     {"gettextbox", GetTextBox},
                     {"getmultilinetextbox", GetMultiLineTextBox},
+                    {"getmessagebox", GetMessageBox},
                     
                     {"gettext", GetText},
                     {"settext", SetText},
@@ -422,6 +423,17 @@ namespace Orchestrion.CommandProcessor
             context.RespondOk(Objects.Put(textBox));
         }
 
+        public void GetMessageBox()
+        {
+            var window = EnsureTargetIs<Window>();
+            var title = GetParameter(1, "title");
+            Window messageBox = window.MessageBox(title);
+            if (messageBox == null)
+                throw new InvalidOperationException("Error finding message box with title '" + title + "'");
+            
+            context.RespondOk(Objects.Put(messageBox));            
+        }
+
         private void SelectText()
         {
             string textToSelect = context.Request.QueryString["1"];
@@ -616,6 +628,15 @@ namespace Orchestrion.CommandProcessor
                 throw new ParameterMissingException(parameterName, param);
             
             return result;
+        }
+
+        private bool IsParameterAvailable(int param)
+        {
+            string result = context.Request.QueryString[param.ToString(CultureInfo.InvariantCulture)];
+            if (string.IsNullOrEmpty(result))
+                return false;
+
+            return true;
         }
 
         private SearchCriteria GetSearchCriteria()
