@@ -68,6 +68,7 @@ namespace Orchestrion.CommandProcessor
 
                     {"getlistbox", GetListBox},
                     {"gettextbox", GetTextBox},
+                    {"getlabel", GetLabel},
                     {"getmultilinetextbox", GetMultiLineTextBox},
                     {"getmessagebox", GetMessageBox},
                     
@@ -417,6 +418,13 @@ namespace Orchestrion.CommandProcessor
             context.RespondOk(Objects.Put(textBox));            
         }
 
+        private void GetLabel()
+        {
+            var window = EnsureTargetIs<Window>();
+            var label = window.Get<Label>(GetSearchCriteria());
+            context.RespondOk(Objects.Put(label));
+        }
+
         public void GetMultiLineTextBox()
         {
             var window = EnsureTargetIs<Window>();
@@ -556,6 +564,10 @@ namespace Orchestrion.CommandProcessor
             else if (target is TextBox)
             {
                 context.RespondOk((target as TextBox).Text);
+            }
+            else if (target is Label)
+            {
+                context.RespondOk((target as Label).Text);
             }
             else
                 throw new InvalidCommandException();
