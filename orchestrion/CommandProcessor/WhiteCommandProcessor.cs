@@ -10,6 +10,7 @@ using White.Core.UIItems.Finders;
 using White.Core.UIItems.ListBoxItems;
 using White.Core.UIItems.MenuItems;
 using White.Core.UIItems.Scrolling;
+using White.Core.UIItems.TreeItems;
 using White.Core.UIItems.WindowItems;
 using White.Core.UIItems.WindowStripControls;
 
@@ -65,10 +66,14 @@ namespace Orchestrion.CommandProcessor
                     {"getitembytext", GetItemByText},
                     {"getitemscount", GetItemsCount},
                     {"getchildren", GetChildren},
+                    {"getnodes", GetNodes},
+                    {"getnode", GetNode},
+                    {"getselectednode", GetSelectedNode},
 
                     {"getlistbox", GetListBox},
                     {"gettextbox", GetTextBox},
                     {"getlabel", GetLabel},
+                    {"gettree", GetTree},
                     {"getmultilinetextbox", GetMultiLineTextBox},
                     {"getmessagebox", GetMessageBox},
                     
@@ -80,6 +85,11 @@ namespace Orchestrion.CommandProcessor
                     {"selectlistitem", SelectListItem},
                     {"isselected", IsSelected},
                     {"ischecked", IsChecked},
+
+                    {"expand", Expand},
+                    {"isexpanded", IsExpanded},
+                    {"selecttreenode", SelectTreeNode},
+                    {"deselecttreenode", DeselectTreeNode},
   
                     {"getbutton", GetButton},
                     {"close", Close},                    
@@ -232,6 +242,13 @@ namespace Orchestrion.CommandProcessor
         {
             var scrollbar = EnsureTargetIs<IScrollBar>();
             context.RespondOk(scrollbar.MaximumValue.ToString(CultureInfo.InvariantCulture));
+        }
+
+        private void GetTree()
+        {
+            var window = EnsureTargetIs<Window>();
+            var tree = window.Get<Tree>(GetSearchCriteria());
+            context.RespondOk(Objects.Put(tree));
         }
 
         private void GetMinValue()
@@ -510,6 +527,11 @@ namespace Orchestrion.CommandProcessor
                 var menuItems = target as Menus;
                 context.RespondOk(Objects.Put(menuItems[index]));
             }
+            else if (target is TreeNodes)
+            {
+                var treeNodes = target as TreeNodes;
+                context.RespondOk(Objects.Put(treeNodes[index]));
+            }
             else
                 throw new InvalidCommandException();
         }
@@ -531,21 +553,68 @@ namespace Orchestrion.CommandProcessor
             {
                 context.RespondOk((target as Menus).Count);
             }
+            else if (target is TreeNodes)
+            {
+                context.RespondOk((target as TreeNodes).Count);
+            }
             else
                 throw new InvalidCommandException();
         }
 
         private void GetChildren()
         {
-            var menuItem = EnsureTargetIs<Menu>();
-            if (menuItem.ChildMenus != null && menuItem.ChildMenus.Count > 0)
+            if (target is Menu)
             {
-                context.RespondOk(Objects.Put(menuItem.ChildMenus));
+                var menuItem = target as Menu;
+                if (menuItem.ChildMenus != null && menuItem.ChildMenus.Count > 0)
+                    context.RespondOk(Objects.Put(menuItem.ChildMenus));
+                else
+                    context.RespondOk();
+            }
+            else if (target is TreeNode)
+            {
+                var treeNode = target as TreeNode;
+                if (treeNode.Nodes != null && treeNode.Nodes.Count > 0)
+                    context.RespondOk(Objects.Put(treeNode.Nodes));
+                else
+                    context.RespondOk();
             }
             else
-            {
+                throw new InvalidCommandException();
+        }
+
+        private void GetNodes()
+        {
+            var tree = EnsureTargetIs<Tree>();
+            if (tree.Nodes != null && tree.Nodes.Count > 0)
+                context.RespondOk(Objects.Put(tree.Nodes));
+            else
                 context.RespondOk();
+        }
+
+        private void GetNode()
+        {
+            var nodeText = GetParameter(1, "node text");
+
+            if (target is Tree)
+            {
+                var node = (target as Tree).Node(nodeText);
+                context.RespondOk(Objects.Put(node));
             }
+            else if (target is TreeNode)
+            {
+                var node = (target as TreeNode).GetItem(nodeText);
+                context.RespondOk(Objects.Put(node));
+            }
+        }
+
+        private void GetSelectedNode()
+        {
+            var tree = EnsureTargetIs<Tree>();
+            if (tree.SelectedNode != null)
+                context.RespondOk(Objects.Put(tree.SelectedNode));
+            else
+                context.RespondOk();            
         }
 
         private void Toggle()
@@ -568,6 +637,10 @@ namespace Orchestrion.CommandProcessor
             else if (target is Label)
             {
                 context.RespondOk((target as Label).Text);
+            }
+            else if (target is TreeNode)
+            {
+                context.RespondOk((target as TreeNode).Text);
             }
             else
                 throw new InvalidCommandException();
@@ -612,8 +685,16 @@ namespace Orchestrion.CommandProcessor
 
         private void IsSelected()
         {
-            var listItem = EnsureTargetIs<ListItem>();
-            context.RespondOk(listItem.IsSelected.ToString());
+            if (target is ListItem)
+            {
+                context.RespondOk((target as ListItem).IsSelected.ToString());
+            }
+            else if (target is TreeNode)
+            {
+                context.RespondOk((target as TreeNode).IsSelected.ToString());
+            }
+            else
+                throw new InvalidCommandException();
         }
 
         private void IsChecked()
@@ -621,6 +702,33 @@ namespace Orchestrion.CommandProcessor
             var listItem = EnsureTargetIs<ListItem>();
             context.RespondOk(listItem.Checked.ToString());
         }
+
+        private void Expand()
+        {
+            var node = EnsureTargetIs<TreeNode>();
+            node.Expand();
+            context.RespondOk();
+        }
+
+        private void IsExpanded()
+        {
+            var node = EnsureTargetIs<TreeNode>();            
+            context.RespondOk(node.IsExpanded().ToString());
+        }
+
+        private void SelectTreeNode()
+        {
+            var node = EnsureTargetIs<TreeNode>();
+            node.Select();
+            context.RespondOk();
+        }
+
+        private void DeselectTreeNode()
+        {
+            var node = EnsureTargetIs<TreeNode>();
+            node.UnSelect();
+            context.RespondOk();
+        }        
 
         private void GetButton()
         {
