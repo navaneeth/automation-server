@@ -87,6 +87,7 @@ namespace Orchestrion.CommandProcessor
                     {"ischecked", IsChecked},
 
                     {"expand", Expand},
+                    {"collapse", Collapse},
                     {"isexpanded", IsExpanded},
                     {"selecttreenode", SelectTreeNode},
                     {"deselecttreenode", DeselectTreeNode},
@@ -707,6 +708,13 @@ namespace Orchestrion.CommandProcessor
         {
             var node = EnsureTargetIs<TreeNode>();
             node.Expand();
+            context.RespondOk();
+        }
+
+        private void Collapse()
+        {
+            var node = EnsureTargetIs<TreeNode>();
+            node.Collapse();
             context.RespondOk();
         }
 
