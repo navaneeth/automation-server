@@ -703,6 +703,8 @@ namespace Orchestrion.CommandProcessor
         {
             if (target is ProgressBar)
                 context.RespondOk((target as ProgressBar).Value.ToString(CultureInfo.InvariantCulture));
+            else if (target is IScrollBar)
+                context.RespondOk((target as IScrollBar).Value.ToString(CultureInfo.InvariantCulture));
             else
                 throw new InvalidCommandException();
         }
