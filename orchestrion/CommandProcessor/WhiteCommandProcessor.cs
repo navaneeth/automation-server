@@ -76,8 +76,10 @@ namespace Orchestrion.CommandProcessor
                     {"gettree", GetTree},
                     {"getmultilinetextbox", GetMultiLineTextBox},
                     {"getmessagebox", GetMessageBox},
+                    {"getprogressbar", GetProgressBar},
                     
                     {"gettext", GetText},
+                    {"getvalue", GetValue},
                     {"settext", SetText},
                     {"isreadonly", IsReadonly},
                     {"checklistitem", CheckListItem},
@@ -239,12 +241,6 @@ namespace Orchestrion.CommandProcessor
                 throw new InvalidCommandException();
         }
 
-        private void GetMaxValue()
-        {
-            var scrollbar = EnsureTargetIs<IScrollBar>();
-            context.RespondOk(scrollbar.MaximumValue.ToString(CultureInfo.InvariantCulture));
-        }
-
         private void GetTree()
         {
             var window = EnsureTargetIs<Window>();
@@ -252,10 +248,32 @@ namespace Orchestrion.CommandProcessor
             context.RespondOk(Objects.Put(tree));
         }
 
+        private void GetMaxValue()
+        {
+            if (target is IScrollBar)
+            {
+                context.RespondOk((target as IScrollBar).MaximumValue.ToString(CultureInfo.InvariantCulture));
+            }
+            else if (target is ProgressBar)
+            {
+                context.RespondOk((target as ProgressBar).Maximum.ToString(CultureInfo.InvariantCulture));
+            }
+            else
+                throw new InvalidCommandException();            
+        }
+
         private void GetMinValue()
         {
-            var scrollbar = EnsureTargetIs<IScrollBar>();
-            context.RespondOk(scrollbar.MinimumValue.ToString(CultureInfo.InvariantCulture));
+            if (target is IScrollBar)
+            {
+                context.RespondOk((target as IScrollBar).MinimumValue.ToString(CultureInfo.InvariantCulture));
+            }
+            else if (target is ProgressBar)
+            {
+                context.RespondOk((target as ProgressBar).Minimum.ToString(CultureInfo.InvariantCulture));
+            }
+            else
+                throw new InvalidCommandException();
         }
 
         private void GetHorizontalScrollBar()
@@ -461,6 +479,13 @@ namespace Orchestrion.CommandProcessor
             context.RespondOk(Objects.Put(messageBox));            
         }
 
+        public void GetProgressBar()
+        {
+            var window = EnsureTargetIs<Window>();
+            var progressBar = window.Get<ProgressBar>(GetSearchCriteria());            
+            context.RespondOk(Objects.Put(progressBar));
+        }
+
         private void SelectText()
         {
             string textToSelect = context.Request.QueryString["1"];
@@ -643,6 +668,14 @@ namespace Orchestrion.CommandProcessor
             {
                 context.RespondOk((target as TreeNode).Text);
             }
+            else
+                throw new InvalidCommandException();
+        }
+
+        private void GetValue()
+        {
+            if (target is ProgressBar)
+                context.RespondOk((target as ProgressBar).Value.ToString(CultureInfo.InvariantCulture));
             else
                 throw new InvalidCommandException();
         }
