@@ -30,6 +30,8 @@ namespace Orchestrion.CommandProcessor
                     {"launch", Launch},
                     {"attach", AttachToExistingProcess},
                     {"getwindow", GetWindow},
+                    {"getmodalwindow", GetModalWindow},
+                    {"getmodalwindows", GetModalWindows},
 
                     {"getmenubar", GetMenubar},
                     {"gettitle", GetTitle},
@@ -178,6 +180,23 @@ namespace Orchestrion.CommandProcessor
             Window window = application.GetWindow(windowTitle);
             int objectId = Objects.Put(window);
             context.RespondOk(objectId);
+        }
+
+        private void GetModalWindow()
+        {
+            var window = EnsureTargetIs<Window>();
+            var modalWindow = window.ModalWindow(GetSearchCriteria());            
+            context.RespondOk(Objects.Put(modalWindow));
+        }
+
+        private void GetModalWindows()
+        {
+            var window = EnsureTargetIs<Window>();
+            var windows = window.ModalWindows();
+            if (windows != null && windows.Count > 0)
+                context.RespondOk(Objects.Put(windows));
+            else
+                context.RespondOk();
         }
 
         private void GetTitle()
@@ -558,6 +577,10 @@ namespace Orchestrion.CommandProcessor
                 var treeNodes = target as TreeNodes;
                 context.RespondOk(Objects.Put(treeNodes[index]));
             }
+            else if (target is List<Window>)
+            {
+                context.RespondOk(Objects.Put((target as List<Window>)[index]));
+            }
             else
                 throw new InvalidCommandException();
         }
@@ -582,6 +605,10 @@ namespace Orchestrion.CommandProcessor
             else if (target is TreeNodes)
             {
                 context.RespondOk((target as TreeNodes).Count);
+            }
+            else if (target is List<Window>)
+            {
+                context.RespondOk((target as List<Window>).Count);
             }
             else
                 throw new InvalidCommandException();
