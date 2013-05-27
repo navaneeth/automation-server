@@ -79,13 +79,14 @@ namespace Orchestrion.CommandProcessor
                     {"getmultilinetextbox", GetMultiLineTextBox},
                     {"getmessagebox", GetMessageBox},
                     {"getprogressbar", GetProgressBar},
+                    {"getcheckbox", GetCheckBox},
                     
                     {"gettext", GetText},
                     {"getvalue", GetValue},
                     {"settext", SetText},
                     {"isreadonly", IsReadonly},
-                    {"checklistitem", CheckListItem},
-                    {"unchecklistitem", UnCheckListItem},
+                    {"check", Check},
+                    {"uncheck", UnCheck},
                     {"selectlistitem", SelectListItem},
                     {"isselected", IsSelected},
                     {"ischecked", IsChecked},
@@ -487,7 +488,7 @@ namespace Orchestrion.CommandProcessor
             context.RespondOk(Objects.Put(textBox));
         }
 
-        public void GetMessageBox()
+        private void GetMessageBox()
         {
             var window = EnsureTargetIs<Window>();
             var title = GetParameter(1, "title");
@@ -498,11 +499,18 @@ namespace Orchestrion.CommandProcessor
             context.RespondOk(Objects.Put(messageBox));            
         }
 
-        public void GetProgressBar()
+        private void GetProgressBar()
         {
             var window = EnsureTargetIs<Window>();
             var progressBar = window.Get<ProgressBar>(GetSearchCriteria());            
             context.RespondOk(Objects.Put(progressBar));
+        }
+
+        private void GetCheckBox()
+        {
+            var window = EnsureTargetIs<Window>();
+            var checkBox = window.Get<CheckBox>(GetSearchCriteria());
+            context.RespondOk(Objects.Put(checkBox));
         }
 
         private void SelectText()
@@ -725,18 +733,36 @@ namespace Orchestrion.CommandProcessor
             context.RespondOk(textBox.IsReadOnly.ToString());
         }
 
-        private void CheckListItem()
+        private void Check()
         {
-            var listItem = EnsureTargetIs<ListItem>();
-            listItem.Check();
-            context.RespondOk();
+            if (target is ListItem)
+            {
+                (target as ListItem).Check();
+                context.RespondOk();
+            }
+            else if (target is CheckBox)
+            {
+                (target as CheckBox).Checked = true;
+                context.RespondOk();
+            }
+            else
+                throw new InvalidCommandException();
         }
 
-        private void UnCheckListItem()
+        private void UnCheck()
         {
-            var listItem = EnsureTargetIs<ListItem>();
-            listItem.UnCheck();
-            context.RespondOk();
+            if (target is ListItem)
+            {
+                (target as ListItem).UnCheck();
+                context.RespondOk();
+            }
+            else if (target is CheckBox)
+            {
+                (target as CheckBox).Checked = false;
+                context.RespondOk();
+            }
+            else
+                throw new InvalidCommandException();
         }
 
         private void SelectListItem()
@@ -762,8 +788,12 @@ namespace Orchestrion.CommandProcessor
 
         private void IsChecked()
         {
-            var listItem = EnsureTargetIs<ListItem>();
-            context.RespondOk(listItem.Checked.ToString());
+            if (target is ListItem)
+                context.RespondOk((target as ListItem).Checked.ToString());
+            else if (target is CheckBox)
+                context.RespondOk((target as CheckBox).Checked.ToString());
+            else
+                throw new InvalidCommandException();
         }
 
         private void Expand()
