@@ -80,6 +80,7 @@ namespace Orchestrion.CommandProcessor
                     {"getmessagebox", GetMessageBox},
                     {"getprogressbar", GetProgressBar},
                     {"getcheckbox", GetCheckBox},
+                    {"getradiobutton", GetRadioButton},
                     
                     {"gettext", GetText},
                     {"getvalue", GetValue},
@@ -87,7 +88,7 @@ namespace Orchestrion.CommandProcessor
                     {"isreadonly", IsReadonly},
                     {"check", Check},
                     {"uncheck", UnCheck},
-                    {"selectlistitem", SelectListItem},
+                    {"select", Select},
                     {"isselected", IsSelected},
                     {"ischecked", IsChecked},
 
@@ -513,6 +514,13 @@ namespace Orchestrion.CommandProcessor
             context.RespondOk(Objects.Put(checkBox));
         }
 
+        private void GetRadioButton()
+        {
+            var window = EnsureTargetIs<Window>();
+            var radioButton = window.Get<RadioButton>(GetSearchCriteria());
+            context.RespondOk(Objects.Put(radioButton));
+        }
+
         private void SelectText()
         {
             string textToSelect = context.Request.QueryString["1"];
@@ -765,23 +773,30 @@ namespace Orchestrion.CommandProcessor
                 throw new InvalidCommandException();
         }
 
-        private void SelectListItem()
+        private void Select()
         {
-            var listItem = EnsureTargetIs<ListItem>();
-            listItem.Select();
-            context.RespondOk();
+            if (target is ListItem)
+            {
+                (target as ListItem).Select();
+                context.RespondOk();
+            }
+            else if (target is RadioButton)
+            {
+                (target as RadioButton).Select();
+                context.RespondOk();
+            }
+            else
+                throw new InvalidCommandException();            
         }
 
         private void IsSelected()
         {
             if (target is ListItem)
-            {
                 context.RespondOk((target as ListItem).IsSelected.ToString());
-            }
             else if (target is TreeNode)
-            {
                 context.RespondOk((target as TreeNode).IsSelected.ToString());
-            }
+            else if (target is RadioButton)
+                context.RespondOk((target as RadioButton).IsSelected.ToString());
             else
                 throw new InvalidCommandException();
         }
