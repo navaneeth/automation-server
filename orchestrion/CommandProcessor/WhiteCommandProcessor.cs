@@ -30,6 +30,7 @@ namespace Orchestrion.CommandProcessor
                     {"launch", Launch},
                     {"attach", AttachToExistingProcess},
                     {"getwindow", GetWindow},
+                    {"getwindowfromrefid", GetWindowFromRefId},
                     {"getmodalwindow", GetModalWindow},
                     {"getmodalwindows", GetModalWindows},
 
@@ -45,6 +46,7 @@ namespace Orchestrion.CommandProcessor
                     {"canscroll", CanScroll},
                     {"getminvalue", GetMinValue},
                     {"getmaxvalue", GetMaxValue},
+                    {"waitwhilebusy", WaitWhileBusy},
                     
                     {"gethscrollbar", GetHorizontalScrollBar},
                     {"getvscrollbar", GetVerticalScrollBar},
@@ -54,7 +56,7 @@ namespace Orchestrion.CommandProcessor
                     {"scrolldown", ScrollDown},
 
                     {"getmenuitem", GetMenuItem},
-                    {"entertext", EnterText},
+                    {"enter", EnterText},
                     {"click", Click},
                     {"rightclick", RightClick},
                     {"toggle", Toggle},
@@ -171,17 +173,16 @@ namespace Orchestrion.CommandProcessor
 
         private void GetWindow()
         {
-            var windowTitle = context.Request.QueryString["1"];
-            if (string.IsNullOrEmpty(windowTitle))
-                throw new ParameterMissingException("window title", 1);
+            var application = EnsureTargetIs<Application>();
+            var windowTitle = GetParameter(1, "title");
+            Window window = application.GetWindow(windowTitle);            
+            context.RespondOk(Objects.Put(window));
+        }
 
-            var application = target as Application;
-            if (application == null)
-                throw new InvalidCommandException();
-
-            Window window = application.GetWindow(windowTitle);
-            int objectId = Objects.Put(window);
-            context.RespondOk(objectId);
+        private void GetWindowFromRefId()
+        {
+            var window = EnsureTargetIs<Window>();
+            context.RespondOk(Objects.Put(window));
         }
 
         private void GetModalWindow()
@@ -269,6 +270,22 @@ namespace Orchestrion.CommandProcessor
             context.RespondOk(Objects.Put(tree));
         }
 
+        private void WaitWhileBusy()
+        {
+            if (target is Application)
+            {
+                (target as Application).WaitWhileBusy();
+                context.RespondOk();
+            }
+            else if (target is Window)
+            {
+                (target as Window).WaitWhileBusy();
+                context.RespondOk();
+            }
+            else
+                throw new InvalidCommandException();
+        }
+
         private void GetMaxValue()
         {
             if (target is IScrollBar)
@@ -348,37 +365,13 @@ namespace Orchestrion.CommandProcessor
             var uiItem = EnsureTargetIs<IUIItem>();
             uiItem.DoubleClick();            
         }
-
-        /// <summary>
-        /// Enter text to the UI item.
-        /// 1 - Text to enter
-        /// 2 - Parent window id to wait
-        /// </summary>        
+        
         private void EnterText()
         {
-            var textToEnter = context.Request.QueryString["1"];
-            var windowId = context.Request.QueryString["2"];
-            if (string.IsNullOrEmpty(textToEnter))
-                throw new ParameterMissingException("text to enter", 1);            
-
-            if (string.IsNullOrEmpty(windowId))
-                throw new ParameterMissingException("window ref id", 2);
-
-            if (!Objects.HasObject(Convert.ToInt32(windowId)))
-                throw new InputException("Invalid reference to the window");
-
-            var window = Objects.Get(Convert.ToInt32(windowId)) as Window;
-            if (window == null)
-                throw new InvalidCommandException();
-
-            var uiItem = target as IUIItem;
-            if (uiItem == null)
-                throw new InvalidCommandException();
-
+            var uiItem = EnsureTargetIs<IUIItem>();
+            var textToEnter = GetParameter(1, "text");            
             uiItem.Enter(textToEnter);
-            // This is required because uiItem.Enter() returns before it completes. We need to hold until the operation is done
-            window.WaitWhileBusy();
-            context.Respond(200);
+            context.RespondOk();
         }
 
         private void Close()
@@ -730,8 +723,7 @@ namespace Orchestrion.CommandProcessor
             var textBox = EnsureTargetIs<TextBox>();
             var textToSet = GetParameter(1, "text");
 
-            // BulkText seems to be more efficient in setting
-            textBox.BulkText = textToSet;
+            textBox.Text = textToSet;
             context.RespondOk();
         }
 
