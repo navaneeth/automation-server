@@ -12,9 +12,11 @@ namespace Orchestrion.Core
     {
         private const int DEFAULT_PORT = 8082;
         private readonly HttpListener listener = new HttpListener();
+        private int port;
 
         public Server(int port)
         {
+            this.port = port;
             listener.Prefixes.Add("http://*:" + port + "/");
         }
 
@@ -29,6 +31,8 @@ namespace Orchestrion.Core
         public void Start()
         {
             listener.Start();
+
+            Console.WriteLine("Started at http://localhost:{0}", port);
             
             bool execute = true;
             while (execute)
