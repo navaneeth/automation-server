@@ -85,6 +85,7 @@ namespace Orchestrion.CommandProcessor
                     {"getradiobutton", GetRadioButton},
                     {"getslider", GetSlider},
                     {"gethyperlink", GetHyperlink},
+                    {"getpanel", GetPanel},
                     
                     {"gettext", GetText},
                     {"getvalue", GetValue},
@@ -530,6 +531,13 @@ namespace Orchestrion.CommandProcessor
             var window = EnsureTargetIs<Window>();
             var link = window.Get<Hyperlink>(GetSearchCriteria());
             context.RespondOk(Objects.Put(link));
+        }
+
+        private void GetPanel()
+        {
+            var window = EnsureTargetIs<Window>();
+            var panel = window.Get<Panel>(GetSearchCriteria());
+            context.RespondOk(Objects.Put(panel));
         }
 
         private void SelectText()
