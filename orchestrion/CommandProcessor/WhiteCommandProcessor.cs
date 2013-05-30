@@ -86,9 +86,11 @@ namespace Orchestrion.CommandProcessor
                     {"getslider", GetSlider},
                     {"gethyperlink", GetHyperlink},
                     {"getpanel", GetPanel},
+                    {"getspinner", GetSpinner},
                     
                     {"gettext", GetText},
                     {"getvalue", GetValue},
+                    {"setvalue", SetValue},
                     {"settext", SetText},
                     {"isreadonly", IsReadonly},
                     {"check", Check},
@@ -540,6 +542,13 @@ namespace Orchestrion.CommandProcessor
             context.RespondOk(Objects.Put(panel));
         }
 
+        private void GetSpinner()
+        {
+            var window = EnsureTargetIs<Window>();
+            var spinner = window.Get<Spinner>(GetSearchCriteria());
+            context.RespondOk(Objects.Put(spinner));
+        }
+
         private void SelectText()
         {
             string textToSelect = context.Request.QueryString["1"];
@@ -742,6 +751,37 @@ namespace Orchestrion.CommandProcessor
                 context.RespondOk((target as IScrollBar).Value.ToString(CultureInfo.InvariantCulture));
             else if (target is Slider)
                 context.RespondOk((target as Slider).Value.ToString(CultureInfo.InvariantCulture));
+            else if (target is Spinner)
+                context.RespondOk((target as Spinner).Value.ToString(CultureInfo.InvariantCulture));
+            else
+                throw new InvalidCommandException();
+        }
+
+        private void SetValue()
+        {
+            var value = GetParameter(1, "value");
+            if (target is Slider)
+            {
+                double dValue;
+                if (double.TryParse(value, out dValue))
+                {
+                    (target as Slider).Value = dValue;
+                    context.RespondOk();
+                }
+                else
+                    throw new InputException("Value is not valid");
+            }
+            else if (target is Spinner)
+            {
+                double dValue;
+                if (double.TryParse(value, out dValue))
+                {
+                    (target as Spinner).Value = dValue;
+                    context.RespondOk();
+                }
+                else
+                    throw new InputException("Value is not valid");
+            }
             else
                 throw new InvalidCommandException();
         }
@@ -833,16 +873,34 @@ namespace Orchestrion.CommandProcessor
 
         private void Increment()
         {
-            var slider = EnsureTargetIs<Slider>();
-            slider.SmallIncrement();
-            context.RespondOk();
+            if (target is Slider)
+            {
+                (target as Slider).SmallIncrement();
+                context.RespondOk();
+            }
+            else if (target is Spinner)
+            {
+                (target as Spinner).Increment();
+                context.RespondOk();
+            }
+            else
+                throw new InvalidCommandException();
         }
 
         private void Decrement()
         {
-            var slider = EnsureTargetIs<Slider>();
-            slider.SmallDecrement();
-            context.RespondOk();
+            if (target is Slider)
+            {
+                (target as Slider).SmallDecrement();
+                context.RespondOk();
+            }
+            else if (target is Spinner)
+            {
+                (target as Spinner).Decrement();
+                context.RespondOk();
+            }
+            else
+                throw new InvalidCommandException();
         }
 
         private void Expand()
