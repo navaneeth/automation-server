@@ -83,6 +83,7 @@ namespace Orchestrion.CommandProcessor
                     {"getprogressbar", GetProgressBar},
                     {"getcheckbox", GetCheckBox},
                     {"getradiobutton", GetRadioButton},
+                    {"getslider", GetSlider},
                     
                     {"gettext", GetText},
                     {"getvalue", GetValue},
@@ -93,6 +94,8 @@ namespace Orchestrion.CommandProcessor
                     {"select", Select},
                     {"isselected", IsSelected},
                     {"ischecked", IsChecked},
+                    {"increment", Increment},
+                    {"decrement", Decrement},
 
                     {"expand", Expand},
                     {"collapse", Collapse},
@@ -514,6 +517,13 @@ namespace Orchestrion.CommandProcessor
             context.RespondOk(Objects.Put(radioButton));
         }
 
+        private void GetSlider()
+        {
+            var window = EnsureTargetIs<Window>();
+            var slider = window.Get<Slider>(GetSearchCriteria());
+            context.RespondOk(Objects.Put(slider));
+        }
+
         private void SelectText()
         {
             string textToSelect = context.Request.QueryString["1"];
@@ -714,6 +724,8 @@ namespace Orchestrion.CommandProcessor
                 context.RespondOk((target as ProgressBar).Value.ToString(CultureInfo.InvariantCulture));
             else if (target is IScrollBar)
                 context.RespondOk((target as IScrollBar).Value.ToString(CultureInfo.InvariantCulture));
+            else if (target is Slider)
+                context.RespondOk((target as Slider).Value.ToString(CultureInfo.InvariantCulture));
             else
                 throw new InvalidCommandException();
         }
@@ -801,6 +813,20 @@ namespace Orchestrion.CommandProcessor
                 context.RespondOk((target as CheckBox).Checked.ToString());
             else
                 throw new InvalidCommandException();
+        }
+
+        private void Increment()
+        {
+            var slider = EnsureTargetIs<Slider>();
+            slider.SmallIncrement();
+            context.RespondOk();
+        }
+
+        private void Decrement()
+        {
+            var slider = EnsureTargetIs<Slider>();
+            slider.SmallDecrement();
+            context.RespondOk();
         }
 
         private void Expand()
