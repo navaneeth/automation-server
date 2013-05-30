@@ -29,10 +29,14 @@ namespace Orchestrion.CommandProcessor
                 {
                     {"launch", Launch},
                     {"attach", AttachToExistingProcess},
+                    {"getdesktop", GetDesktop},
+                    {"geticons", GetIcons},
                     {"getwindow", GetWindow},
+                    {"getwindows", GetWindows},
                     {"getwindowfromrefid", GetWindowFromRefId},
                     {"getmodalwindow", GetModalWindow},
                     {"getmodalwindows", GetModalWindows},
+                    
 
                     {"getmenubar", GetMenubar},
                     {"gettitle", GetTitle},
@@ -123,8 +127,8 @@ namespace Orchestrion.CommandProcessor
                 return;
             }
 
-            // Launch doesn't need a ref id
-            if (command != "launch" && command != "attach")
+            // these commands doesn't need a ref id
+            if (command != "launch" && command != "attach" && command != "getdesktop")
             {
                 if (!TryGetTarget())
                     return;
@@ -179,12 +183,40 @@ namespace Orchestrion.CommandProcessor
             context.RespondOk(objectId);
         }
 
+        private void GetDesktop()
+        {
+            var desktop = Desktop.Instance;
+            if (desktop != null)
+                context.RespondOk(Objects.Put(desktop));
+            else
+                context.RespondOk();
+        }
+
+        private void GetIcons()
+        {
+            var desktop = EnsureTargetIs<Desktop>();
+            if (desktop.Icons != null)
+                context.RespondOk(Objects.Put(desktop.Icons));
+            else
+                context.RespondOk();
+        }
+
         private void GetWindow()
         {
             var application = EnsureTargetIs<Application>();
             var windowTitle = GetParameter(1, "title");
             Window window = application.GetWindow(windowTitle);            
             context.RespondOk(Objects.Put(window));
+        }
+
+        private void GetWindows()
+        {
+            var desktop = EnsureTargetIs<Desktop>();
+            var windows = desktop.Windows();
+            if (windows != null && windows.Count > 0)
+                context.RespondOk(Objects.Put(windows));
+            else
+                context.RespondOk();            
         }
 
         private void GetWindowFromRefId()
