@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
+using System.Windows;
 using Orchestrion.Core;
 using Orchestrion.Extensions;
 using White.Core;
@@ -38,13 +39,18 @@ namespace Orchestrion.CommandProcessor
                     {"getwindowfromrefid", GetWindowFromRefId},
                     {"getmodalwindow", GetModalWindow},
                     {"getmodalwindows", GetModalWindows},
+                    
                     {"getkeyboard", GetKeyboard},
                     {"pressspecialkey", PressSpecialKey},
                     {"holdspecialkey", HoldSpecialKey},
                     {"releasespecialkey", ReleaseSpecialKey},
                     {"iscapslockon", IsCapsLockOn},
                     {"changecapslock", ChangeCapsLock},
-                    
+
+                    {"getmouse", GetMouse},
+                    {"draganddrop", DragAndDrop},
+                    {"getcurrentposition", GetCurrentPosition},
+                    {"setposition", SetPosition},
 
                     {"getmenubar", GetMenubar},
                     {"gettitle", GetTitle},
@@ -261,7 +267,7 @@ namespace Orchestrion.CommandProcessor
 
         private void PressSpecialKey()
         {
-            var keyboard = EnsureTargetIs<AttachedKeyboard>();
+            var keyboard = EnsureTargetIs<IKeyboard>();
             var value = GetParameter(1, "key code");
             int code;
             if (int.TryParse(value, out code))
@@ -276,7 +282,7 @@ namespace Orchestrion.CommandProcessor
 
         private void HoldSpecialKey()
         {
-            var keyboard = EnsureTargetIs<AttachedKeyboard>();
+            var keyboard = EnsureTargetIs<IKeyboard>();
             var value = GetParameter(1, "key code");
             int code;
             if (int.TryParse(value, out code))
@@ -291,7 +297,7 @@ namespace Orchestrion.CommandProcessor
 
         private void ReleaseSpecialKey()
         {
-            var keyboard = EnsureTargetIs<AttachedKeyboard>();
+            var keyboard = EnsureTargetIs<IKeyboard>();
             var value = GetParameter(1, "key code");
             int code;
             if (int.TryParse(value, out code))
@@ -306,15 +312,72 @@ namespace Orchestrion.CommandProcessor
 
         private void IsCapsLockOn()
         {
-            var keyboard = EnsureTargetIs<AttachedKeyboard>();
+            var keyboard = EnsureTargetIs<IKeyboard>();
             context.RespondOk(keyboard.CapsLockOn.ToString());
         }
 
         private void ChangeCapsLock()
         {
-            var keyboard = EnsureTargetIs<AttachedKeyboard>();
+            var keyboard = EnsureTargetIs<IKeyboard>();
             bool value = GetParameter(1, "value") == "true";
             keyboard.CapsLockOn = value;
+            context.RespondOk();
+        }
+
+        private void GetMouse()
+        {
+            var mouse = EnsureTargetIs<UIItemContainer>();
+            if (mouse.Mouse != null)
+                context.RespondOk(Objects.Put(mouse));
+            else
+                context.RespondOk();
+        }
+
+        private void DragAndDrop()
+        {
+            var mouse = EnsureTargetIs<IMouse>();
+            int a, b;
+            if (!int.TryParse(GetParameter(1, "item to drag"), out a))
+                throw new InputException("Incorrect refid for item to drag");
+            
+            if (!int.TryParse(GetParameter(2, "destination"), out b))
+                throw new InputException("Incorrect refid for destination");
+            
+            if (!Objects.HasObject(a))
+                throw new InputException("Invalid value for item to drag");
+
+            if (!Objects.HasObject(b))
+                throw new InputException("Invalid value for destination");
+
+            var source = Objects.Get(a) as IUIItem;
+            var destination = Objects.Get(a) as IUIItem;
+
+            if (source == null)
+                throw new InputException("Source should point to valid object");
+
+            if (destination == null)
+                throw new InputException("Destination should point to valid object");
+
+            mouse.DragAndDrop(source, destination);
+        }
+
+        private void GetCurrentPosition()
+        {
+            var mouse = EnsureTargetIs<IMouse>();
+            context.RespondOk(String.Format("{0},{1}", mouse.Location.X, mouse.Location.Y));
+        }
+
+        private void SetPosition()
+        {
+            var mouse = EnsureTargetIs<IMouse>();
+            int x, y;
+            if (!int.TryParse(GetParameter(1, "x"), out x))
+                throw new InputException("Invalid value for x");
+
+            if (!int.TryParse(GetParameter(2, "y"), out y))
+                throw new InputException("Invalid value for y");
+
+            mouse.Location = new Point(x, y);
             context.RespondOk();
         }
 
@@ -560,16 +623,34 @@ namespace Orchestrion.CommandProcessor
 
         private void Click()
         {
-            var uiItem = EnsureTargetIs<IUIItem>();
-            uiItem.Click();
-            context.RespondOk();            
+            if (target is IUIItem)
+            {
+                (target as IUIItem).Click();
+                context.RespondOk();
+            }
+            else if (target is IMouse)
+            {
+                (target as IMouse).Click();
+                context.RespondOk();
+            }
+            else
+                throw new InvalidCommandException();           
         }
 
         private void RightClick()
         {
-            var uiItem = EnsureTargetIs<IUIItem>();
-            uiItem.RightClick();
-            context.RespondOk();
+            if (target is IUIItem)
+            {
+                (target as IUIItem).RightClick();
+                context.RespondOk();
+            }
+            else if (target is IMouse)
+            {
+                (target as IMouse).RightClick();
+                context.RespondOk();
+            }
+            else
+                throw new InvalidCommandException();           
         }
 
         private void GetComboBox()
