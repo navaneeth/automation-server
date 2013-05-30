@@ -5,6 +5,7 @@ using System.Net;
 using Orchestrion.Core;
 using Orchestrion.Extensions;
 using White.Core;
+using White.Core.InputDevices;
 using White.Core.UIItems;
 using White.Core.UIItems.Finders;
 using White.Core.UIItems.ListBoxItems;
@@ -13,6 +14,7 @@ using White.Core.UIItems.Scrolling;
 using White.Core.UIItems.TreeItems;
 using White.Core.UIItems.WindowItems;
 using White.Core.UIItems.WindowStripControls;
+using White.Core.WindowsAPI;
 
 namespace Orchestrion.CommandProcessor
 {
@@ -36,6 +38,12 @@ namespace Orchestrion.CommandProcessor
                     {"getwindowfromrefid", GetWindowFromRefId},
                     {"getmodalwindow", GetModalWindow},
                     {"getmodalwindows", GetModalWindows},
+                    {"getkeyboard", GetKeyboard},
+                    {"pressspecialkey", PressSpecialKey},
+                    {"holdspecialkey", HoldSpecialKey},
+                    {"releasespecialkey", ReleaseSpecialKey},
+                    {"iscapslockon", IsCapsLockOn},
+                    {"changecapslock", ChangeCapsLock},
                     
 
                     {"getmenubar", GetMenubar},
@@ -242,6 +250,74 @@ namespace Orchestrion.CommandProcessor
                 context.RespondOk();
         }
 
+        private void GetKeyboard()
+        {
+            var container = EnsureTargetIs<UIItemContainer>();
+            if (container.Keyboard != null)
+                context.RespondOk(Objects.Put(container.Keyboard));
+            else
+                context.RespondOk();
+        }
+
+        private void PressSpecialKey()
+        {
+            var keyboard = EnsureTargetIs<AttachedKeyboard>();
+            var value = GetParameter(1, "key code");
+            int code;
+            if (int.TryParse(value, out code))
+            {
+                var specialKey = (KeyboardInput.SpecialKeys) Enum.Parse(typeof (KeyboardInput.SpecialKeys), value);
+                keyboard.PressSpecialKey(specialKey);
+                context.RespondOk();
+            }
+            else
+                throw new InputException("Invalid key code");
+        }
+
+        private void HoldSpecialKey()
+        {
+            var keyboard = EnsureTargetIs<AttachedKeyboard>();
+            var value = GetParameter(1, "key code");
+            int code;
+            if (int.TryParse(value, out code))
+            {
+                var specialKey = (KeyboardInput.SpecialKeys)Enum.Parse(typeof(KeyboardInput.SpecialKeys), value);
+                keyboard.HoldKey(specialKey);
+                context.RespondOk();
+            }
+            else
+                throw new InputException("Invalid key code");
+        }
+
+        private void ReleaseSpecialKey()
+        {
+            var keyboard = EnsureTargetIs<AttachedKeyboard>();
+            var value = GetParameter(1, "key code");
+            int code;
+            if (int.TryParse(value, out code))
+            {
+                var specialKey = (KeyboardInput.SpecialKeys)Enum.Parse(typeof(KeyboardInput.SpecialKeys), value);
+                keyboard.LeaveKey(specialKey);                
+                context.RespondOk();
+            }
+            else
+                throw new InputException("Invalid key code");
+        }
+
+        private void IsCapsLockOn()
+        {
+            var keyboard = EnsureTargetIs<AttachedKeyboard>();
+            context.RespondOk(keyboard.CapsLockOn.ToString());
+        }
+
+        private void ChangeCapsLock()
+        {
+            var keyboard = EnsureTargetIs<AttachedKeyboard>();
+            bool value = GetParameter(1, "value") == "true";
+            keyboard.CapsLockOn = value;
+            context.RespondOk();
+        }
+
         private void GetTitle()
         {
             var window = EnsureTargetIs<Window>();
@@ -408,10 +484,19 @@ namespace Orchestrion.CommandProcessor
         
         private void EnterText()
         {
-            var uiItem = EnsureTargetIs<IUIItem>();
-            var textToEnter = GetParameter(1, "text");            
-            uiItem.Enter(textToEnter);
-            context.RespondOk();
+            var textToEnter = GetParameter(1, "text");
+            if (target is IUIItem)
+            {
+                (target as IUIItem).Enter(textToEnter);
+                context.RespondOk();
+            }
+            else if (target is Keyboard)
+            {
+                (target as Keyboard).Enter(textToEnter);
+                context.RespondOk();
+            }
+            else
+                throw new InvalidCommandException();
         }
 
         private void Close()
