@@ -87,6 +87,7 @@ namespace Orchestrion.CommandProcessor
                     {"gethyperlink", GetHyperlink},
                     {"getpanel", GetPanel},
                     {"getspinner", GetSpinner},
+                    {"getgroupbox", GetGroupBox},
                     
                     {"gettext", GetText},
                     {"getvalue", GetValue},
@@ -272,7 +273,7 @@ namespace Orchestrion.CommandProcessor
 
         private void GetTree()
         {
-            var window = EnsureTargetIs<Window>();
+            var window = EnsureTargetIs<IUIItemContainer>();
             var tree = window.Get<Tree>(GetSearchCriteria());
             context.RespondOk(Objects.Put(tree));
         }
@@ -456,35 +457,35 @@ namespace Orchestrion.CommandProcessor
 
         private void GetComboBox()
         {
-            var window = EnsureTargetIs<Window>();
+            var window = EnsureTargetIs<IUIItemContainer>();
             var comboBox = window.Get<ComboBox>(GetSearchCriteria());
             context.RespondOk(Objects.Put(comboBox));
         }        
 
         private void GetListBox()
         {
-            var window = EnsureTargetIs<Window>();
+            var window = EnsureTargetIs<IUIItemContainer>();
             var listBox = window.Get<ListBox>(GetSearchCriteria());
             context.RespondOk(Objects.Put(listBox));
         }
 
         private void GetTextBox()
         {
-            var window = EnsureTargetIs<Window>();
+            var window = EnsureTargetIs<IUIItemContainer>();
             var textBox = window.Get<TextBox>(GetSearchCriteria());
             context.RespondOk(Objects.Put(textBox));            
         }
 
         private void GetLabel()
         {
-            var window = EnsureTargetIs<Window>();
+            var window = EnsureTargetIs<IUIItemContainer>();
             var label = window.Get<Label>(GetSearchCriteria());
             context.RespondOk(Objects.Put(label));
         }
 
         public void GetMultiLineTextBox()
         {
-            var window = EnsureTargetIs<Window>();
+            var window = EnsureTargetIs<IUIItemContainer>();
             var textBox = window.Get<MultilineTextBox>(GetSearchCriteria());
             context.RespondOk(Objects.Put(textBox));
         }
@@ -502,51 +503,58 @@ namespace Orchestrion.CommandProcessor
 
         private void GetProgressBar()
         {
-            var window = EnsureTargetIs<Window>();
+            var window = EnsureTargetIs<IUIItemContainer>();
             var progressBar = window.Get<ProgressBar>(GetSearchCriteria());            
             context.RespondOk(Objects.Put(progressBar));
         }
 
         private void GetCheckBox()
         {
-            var window = EnsureTargetIs<Window>();
+            var window = EnsureTargetIs<IUIItemContainer>();
             var checkBox = window.Get<CheckBox>(GetSearchCriteria());
             context.RespondOk(Objects.Put(checkBox));
         }
 
         private void GetRadioButton()
         {
-            var window = EnsureTargetIs<Window>();
+            var window = EnsureTargetIs<IUIItemContainer>();
             var radioButton = window.Get<RadioButton>(GetSearchCriteria());
             context.RespondOk(Objects.Put(radioButton));
         }
 
         private void GetSlider()
         {
-            var window = EnsureTargetIs<Window>();
+            var window = EnsureTargetIs<IUIItemContainer>();
             var slider = window.Get<Slider>(GetSearchCriteria());
             context.RespondOk(Objects.Put(slider));
         }
 
         private void GetHyperlink()
         {
-            var window = EnsureTargetIs<Window>();
+            var window = EnsureTargetIs<IUIItemContainer>();
             var link = window.Get<Hyperlink>(GetSearchCriteria());
             context.RespondOk(Objects.Put(link));
         }
 
         private void GetPanel()
         {
-            var window = EnsureTargetIs<Window>();
+            var window = EnsureTargetIs<IUIItemContainer>();
             var panel = window.Get<Panel>(GetSearchCriteria());
             context.RespondOk(Objects.Put(panel));
         }
 
         private void GetSpinner()
         {
-            var window = EnsureTargetIs<Window>();
+            var window = EnsureTargetIs<IUIItemContainer>();
             var spinner = window.Get<Spinner>(GetSearchCriteria());
             context.RespondOk(Objects.Put(spinner));
+        }
+
+        private void GetGroupBox()
+        {
+            var window = EnsureTargetIs<IUIItemContainer>();
+            var group = window.Get<GroupBox>(GetSearchCriteria());
+            context.RespondOk(Objects.Put(group));
         }
 
         private void SelectText()
@@ -939,7 +947,7 @@ namespace Orchestrion.CommandProcessor
 
         private void GetButton()
         {
-            var window = EnsureTargetIs<Window>();
+            var window = EnsureTargetIs<IUIItemContainer>();
             var button = window.Get<Button>(GetSearchCriteria());            
             context.RespondOk(Objects.Put(button));
         }
