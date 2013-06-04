@@ -5,9 +5,9 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Orchestrion")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Automation test server")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Orchestrion")]
 [assembly: AssemblyProduct("Orchestrion")]
 [assembly: AssemblyCopyright("Copyright © 2013 Navaneeth K.N (navaneethkn@gmail.com)")]
 [assembly: AssemblyTrademark("")]

@@ -17,7 +17,7 @@ namespace Orchestrion.Core
         public Server(int port)
         {
             this.port = port;
-            listener.Prefixes.Add("http://*:" + port + "/");
+            listener.Prefixes.Add("http://localhost:" + port + "/");
         }
 
         public Server()
