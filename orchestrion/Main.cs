@@ -18,7 +18,7 @@ namespace Orchestrion
         {
             try
             {
-                var version = Assembly.GetExecutingAssembly().GetName().Version;
+                var version = ((AssemblyInformationalVersionAttribute)Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false)[0]).InformationalVersion;
                 Console.WriteLine("Orchestrion - " + version);
             }
             catch (Exception e)

@@ -1,17 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{4CD5431A-FDF4-493C-A7F1-93E622534977}</ProjectGuid>
-    <OutputType>Exe</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Orchestrion</RootNamespace>
-    <AssemblyName>orchestrion</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
+    <MSBuildCommunityTasksPath>$(SolutionDir)\.build</MSBuildCommunityTasksPath>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -24,9 +14,26 @@
     <MapFileExtensions>true</MapFileExtensions>
     <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <Import Project="$(MSBuildCommunityTasksPath)\MSBuild.Community.Tasks.Targets" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{4CD5431A-FDF4-493C-A7F1-93E622534977}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Orchestrion</RootNamespace>
+    <AssemblyName>orchestrion</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <Major>0</Major>
+    <Minor>1</Minor>
+    <Patch>0</Patch>
+    <BuildDate>$([System.DateTime]::Now.ToString('yyyyMMdd'))</BuildDate>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>x86</PlatformTarget>
@@ -106,9 +113,29 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
+  
+  
+  
   -->
+  <Target Name="BeforeBuild">
+    <Message Text="Generating AssemblyInfo">
+    </Message>
+    <AssemblyInfo CodeLanguage="CS" OutputFile="$(MSBuildProjectDirectory)\Properties\AssemblyInfo.cs" AssemblyTitle="Orchestrion" AssemblyCopyright="Copyright (c) Navaneeth, 2013" AssemblyVersion="$(Major).$(Minor).$(Patch)" AssemblyFileVersion="$(Major).$(Minor).$(Patch)" AssemblyInformationalVersion="$(Major).$(Minor).$(Patch).$(BuildDate)">
+    </AssemblyInfo>
+  </Target>
+
+  <Target Name="AfterBuild" Condition="'$(Configuration)' == 'Release' ">
+    <Message Text="Generating distributable package" Importance="High" />
+    <ItemGroup>
+      <ApplicationFiles Include="$(OutDir)\**\*.*" Exclude="$(OutDir)\*vshost.exe*;$(OutDir)\*.pdb;$(OutDir)\*.xml" />
+      
+    </ItemGroup>
+      <PropertyGroup>
+        <distrofile>$(OutDir)\distro\orchestrion-$(Major).$(Minor).$(Patch).$(BuildDate).zip</distrofile>
+      </PropertyGroup> 
+    <MakeDir Directories="$(OutDir)\distro" />    
+    <Zip Files="@(ApplicationFiles)" WorkingDirectory="$(OutDir)" ZipFileName="$(distrofile)" ZipLevel="9" />
+  </Target>
+  
+  
 </Project>
