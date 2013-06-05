@@ -16,6 +16,7 @@ using White.Core.UIItems.TreeItems;
 using White.Core.UIItems.WindowItems;
 using White.Core.UIItems.WindowStripControls;
 using White.Core.WindowsAPI;
+using log4net;
 
 namespace Orchestrion.CommandProcessor
 {
@@ -24,7 +25,8 @@ namespace Orchestrion.CommandProcessor
         private readonly Dictionary<string, Action> commands;
         private object target;
         private int currentRefId = -1;
-        private HttpListenerContext context;
+        private HttpListenerContext context;        
+        private readonly ILog logger = LogManager.GetLogger(typeof(Program));
 
         public WhiteCommandProcessor()
         {
@@ -168,6 +170,7 @@ namespace Orchestrion.CommandProcessor
             catch (Exception e)
             {
                 context.Respond(500, e.Message);
+                logger.Error(e);
             }
         }
 

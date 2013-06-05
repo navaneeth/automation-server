@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using Orchestrion.Extensions;
+using log4net;
 
 namespace Orchestrion.Core
 {
@@ -13,6 +14,7 @@ namespace Orchestrion.Core
         private const int DEFAULT_PORT = 8082;
         private readonly HttpListener listener = new HttpListener();
         private int port;
+        private readonly ILog logger = LogManager.GetLogger(typeof(Program));
 
         public Server(int port)
         {
@@ -32,7 +34,7 @@ namespace Orchestrion.Core
         {
             listener.Start();
 
-            Console.WriteLine("Started at http://localhost:{0}", port);
+            logger.InfoFormat("Started at http://localhost:{0}", port);            
             
             bool execute = true;
             while (execute)
@@ -48,12 +50,13 @@ namespace Orchestrion.Core
                 
                 if ("quit" == command && request.QueryString["ref"] == null)
                 {
+                    logger.Info("Quitting. Bye bye");
                     context.Respond(200, "Bye bye!");
                     execute = false;
                     continue;
                 }
 
-                Console.WriteLine("Processing " + command);
+                logger.Info("Processing " + command);
 
                 CommandProcessor.Instance.Process(context, command);
             }
