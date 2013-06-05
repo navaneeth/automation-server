@@ -553,9 +553,9 @@ namespace Orchestrion.CommandProcessor
                 (target as IUIItem).Enter(textToEnter);
                 context.RespondOk();
             }
-            else if (target is Keyboard)
+            else if (target is IKeyboard)
             {
-                (target as Keyboard).Enter(textToEnter);
+                (target as IKeyboard).Enter(textToEnter);
                 context.RespondOk();
             }
             else
