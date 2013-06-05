@@ -225,8 +225,14 @@ namespace Orchestrion.CommandProcessor
 
         private void GetWindows()
         {
-            var desktop = EnsureTargetIs<Desktop>();
-            var windows = desktop.Windows();
+            List<Window> windows;
+            if (target is Desktop)
+                windows = (target as Desktop).Windows();
+            else if (target is Application)
+                windows = (target as Application).GetWindows();
+            else
+                throw new InvalidCommandException();
+                        
             if (windows != null && windows.Count > 0)
                 context.RespondOk(Objects.Put(windows));
             else
