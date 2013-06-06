@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using Orchestrion.Extensions;
 using log4net;
 
@@ -29,7 +30,7 @@ namespace Orchestrion.Core
             {
                 listener.Start();
             }
-            catch (HttpListenerException e)
+            catch (Exception e)
             {
                 logger.Error(e);
                 logger.InfoFormat("Port - {0}, Host - {1}, Logs - {2}", options.Port, options.Host, options.LogFileDirectory);
@@ -37,7 +38,7 @@ namespace Orchestrion.Core
             }
             
 
-            logger.InfoFormat("Started at http://localhost:{0}", options.Port);
+            logger.InfoFormat("Started at http://{0}:{1}", options.Host, options.Port);
             
             bool execute = true;
             while (execute)
@@ -56,6 +57,13 @@ namespace Orchestrion.Core
                     logger.Info("Quitting. Bye bye");
                     context.Respond(200, "Bye bye!");
                     execute = false;
+                    continue;
+                }
+
+                if ("ping" == command && request.QueryString["ref"] == null)
+                {
+                    logger.Info("Ping.....");
+                    context.Respond(200, "pong");
                     continue;
                 }
 
