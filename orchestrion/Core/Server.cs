@@ -1,5 +1,4 @@
-﻿using System;
-using System.Net;
+﻿using System.Net;
 using Orchestrion.Extensions;
 using log4net;
 
@@ -9,32 +8,36 @@ namespace Orchestrion.Core
     /// Implements a simple HTTP server which understands the request format
     /// and delegates the command to each command processors
     /// </summary>
-    public sealed class Server
+    internal sealed class Server
     {
-        private const int DEFAULT_PORT = 8082;
         private readonly HttpListener listener = new HttpListener();
-        private int port;
         private readonly ILog logger = LogManager.GetLogger(typeof(Program));
+        private readonly ServerOptions options;
 
-        public Server(int port)
-        {
-            this.port = port;
-            listener.Prefixes.Add("http://localhost:" + port + "/");
-        }
-
-        public Server()
-            : this(DEFAULT_PORT)
-        {
-        }
+        public Server(ServerOptions options)
+        {            
+            listener.Prefixes.Add("http://" + options.Host +  ":" + options.Port + "/");
+            this.options = options;
+        }        
 
         /// <summary>
         /// Starts the server and block the caller. To quit, send the quit command
         /// </summary>
         public void Start()
         {
-            listener.Start();
+            try
+            {
+                listener.Start();
+            }
+            catch (HttpListenerException e)
+            {
+                logger.Error(e);
+                logger.InfoFormat("Port - {0}, Host - {1}, Logs - {2}", options.Port, options.Host, options.LogFileDirectory);
+                throw;
+            }
+            
 
-            logger.InfoFormat("Started at http://localhost:{0}", port);            
+            logger.InfoFormat("Started at http://localhost:{0}", options.Port);
             
             bool execute = true;
             while (execute)
