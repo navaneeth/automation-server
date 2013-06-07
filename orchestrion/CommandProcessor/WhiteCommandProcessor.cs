@@ -59,6 +59,7 @@ namespace Orchestrion.CommandProcessor
                     {"isenabled", IsEnabled},
                     {"doubleclick", DoubleClick},
                     {"isoffscreen", IsOffScreen},
+                    {"ismodal", IsModal},
                     {"setfocus", SetFocus},
                     {"isfocused", IsFocused},
                     {"isvisible", IsVisible},
@@ -406,6 +407,12 @@ namespace Orchestrion.CommandProcessor
         {
             var uiItem = EnsureTargetIs<IUIItem>();
             context.RespondOk(uiItem.IsOffScreen.ToString());            
+        }
+
+        private void IsModal()
+        {
+            var window = EnsureTargetIs<Window>();
+            context.RespondOk(window.IsModal.ToString());
         }
 
         private void SetFocus()
