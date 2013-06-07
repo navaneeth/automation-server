@@ -1,15 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using Orchestrion.Core;
 using log4net;
 using log4net.Appender;
 using log4net.Config;
 using log4net.Layout;
-using Castle.Core.Internal;
 
 namespace Orchestrion
 {
@@ -20,11 +22,15 @@ namespace Orchestrion
             Port = 8082;
             Host = "localhost";
             LogFileDirectory = null;
+            ConsoleOutput = true;
+            ParentProcessId = null;
         }
 
         public int Port { get; set; }
         public string Host { get; set; }
         public string LogFileDirectory { get; set; }
+        public bool ConsoleOutput { get; set; }
+        public int? ParentProcessId { get; set; }
     }
 
     internal sealed class UnknownOptionException : Exception
@@ -32,7 +38,7 @@ namespace Orchestrion
         public UnknownOptionException(string option)
             : base("Unknown option : " + option)
         {
-            
+
         }
     }
 
@@ -51,6 +57,8 @@ namespace Orchestrion
     /// --port VALUE
     /// --host VALUE
     /// --logs DIRECTORY_PATH
+    /// --console-output TRUE|FALSE
+    /// --parent PROCESS_ID - Only required when invoking this within another program. This program will auto quit when parent dies
     /// </summary>
     public class Program
     {
@@ -59,12 +67,14 @@ namespace Orchestrion
             {
                 {"--port", SetPort},
                 {"--host", SetHost},
-                {"--logs", SetLogsDirectory}                
+                {"--logs", SetLogsDirectory},
+                {"--console-output", SetConsoleOutput},
+                {"--parent", SetParent}
             };
 
         static string[] SetPort(string currentOption, string[] args, ServerOptions options)
-        {            
-            if (args.IsNullOrEmpty())
+        {
+            if (!args.Any())
                 throw new InvalidOptionValueException(currentOption, string.Empty, "Expected a port to be present");
 
             int port;
@@ -78,8 +88,8 @@ namespace Orchestrion
 
         static string[] SetHost(string currentOption, string[] args, ServerOptions options)
         {
-            if (args.IsNullOrEmpty())
-                throw new InvalidOptionValueException(currentOption, string.Empty, "Expected a host name to be present");            
+            if (!args.Any())
+                throw new InvalidOptionValueException(currentOption, string.Empty, "Expected a host name to be present");
 
             options.Host = args.First();
 
@@ -88,7 +98,7 @@ namespace Orchestrion
 
         static string[] SetLogsDirectory(string currentOption, string[] args, ServerOptions options)
         {
-            if (args.IsNullOrEmpty())
+            if (!args.Any())
                 throw new InvalidOptionValueException(currentOption, string.Empty, "Expected a logs directory present");
 
             string logsDir = args.First();
@@ -99,6 +109,30 @@ namespace Orchestrion
                 throw new InvalidOptionValueException(currentOption, logsDir, "Directory is not writable");
 
             options.LogFileDirectory = args.First();
+
+            return args.Skip(1).ToArray();
+        }
+
+        static string[] SetConsoleOutput(string currentOption, string[] args, ServerOptions options)
+        {
+            if (args.Length == 0)
+                throw new InvalidOptionValueException(currentOption, string.Empty, "Expected a boolean value");
+
+            options.ConsoleOutput = args.First() == Boolean.TrueString;
+
+            return args.Skip(1).ToArray();
+        }
+
+        static string[] SetParent(string currentOption, string[] args, ServerOptions options)
+        {
+            if (args.Length == 0)
+                throw new InvalidOptionValueException(currentOption, string.Empty, "Expected a process id");
+
+            int id;
+            if (!int.TryParse(args.First(), out id))
+                throw new InvalidOptionValueException(currentOption, args.First(), "Process id is not a number");
+
+            options.ParentProcessId = id;
 
             return args.Skip(1).ToArray();
         }
@@ -128,7 +162,7 @@ namespace Orchestrion
                 return false;
             }
         }
-        
+
         static void Main(string[] args)
         {
             try
@@ -136,6 +170,8 @@ namespace Orchestrion
                 var serverOptions = ProcessArgs(args);
                 ConfigureLogging(serverOptions);
                 PrintVersion();
+                WatchParentProcess(serverOptions);
+                LogArgs(args);
 
                 var server = new Server(serverOptions);
                 server.Start();
@@ -144,7 +180,20 @@ namespace Orchestrion
             {
                 Console.Error.WriteLine(e.Message);
                 Environment.Exit(1);
-            }            
+            }
+        }
+
+        private static void LogArgs(string[] args)
+        {
+            var logger = LogManager.GetLogger(typeof(Program));
+            var command = new StringBuilder();
+            command.Append(AppDomain.CurrentDomain.FriendlyName);
+            foreach (var s in args)
+            {
+                command.Append(" ");
+                command.Append(s);
+            }
+            logger.Info(command.ToString());
         }
 
         static ServerOptions ProcessArgs(string[] args)
@@ -161,7 +210,7 @@ namespace Orchestrion
             }
 
             return serverOptions;
-        }        
+        }
 
         static void ConfigureLogging(ServerOptions options)
         {
@@ -169,7 +218,7 @@ namespace Orchestrion
             layout.ActivateOptions();
 
             var appenders = new List<IAppender>();
-            if (!options.LogFileDirectory.IsNullOrEmpty())
+            if (!string.IsNullOrEmpty(options.LogFileDirectory))
             {
                 var fileAppender = new FileAppender
                 {
@@ -184,13 +233,16 @@ namespace Orchestrion
                 fileAppender.ActivateOptions();
                 appenders.Add(fileAppender);
             }
-            
-            var consoleAppender = new ConsoleAppender
+
+            if (options.ConsoleOutput)
             {
-                Layout = layout
-            };
-            consoleAppender.ActivateOptions();
-            appenders.Add(consoleAppender);
+                var consoleAppender = new ConsoleAppender
+                {
+                    Layout = layout
+                };
+                consoleAppender.ActivateOptions();
+                appenders.Add(consoleAppender);
+            }
 
             BasicConfigurator.Configure(appenders.ToArray());
         }
@@ -206,6 +258,51 @@ namespace Orchestrion
             catch (Exception e)
             {
                 Console.WriteLine(e);
+            }
+        }
+
+        static void WatchParentProcess(ServerOptions serverOptions)
+        {
+            if (!serverOptions.ParentProcessId.HasValue)
+                return;
+
+            var watcher = new Thread(() => WatchProcess(serverOptions)){IsBackground = true};
+            watcher.Start();
+        }
+
+        private static void WatchProcess(ServerOptions serverOptions)
+        {
+            var logger = LogManager.GetLogger(typeof (Program));
+            try
+            {
+                Debug.Assert(serverOptions.ParentProcessId != null, "serverOptions.ParentProcessId != null");
+                var parent = Process.GetProcessById(serverOptions.ParentProcessId.Value);
+                parent.WaitForExit();
+            }
+            catch (Exception e)
+            {
+                logger.Error("Can't get parent process. Stopped watching." + e.Message);
+                return;
+            }
+
+            try
+            {
+                // Parent process exited. Killing this process
+                logger.Info("Parent process exited. Quitting..");
+                var request =
+                    WebRequest.Create(string.Format("http://{0}:{1}/?command=quit", serverOptions.Host,
+                                                    serverOptions.Port));
+                var response = (HttpWebResponse) request.GetResponse();
+                if (response.StatusCode != HttpStatusCode.OK)
+                {
+                    logger.ErrorFormat("Normal exit failed. Server returned - {0}", response.StatusCode);
+                    Environment.Exit(1);
+                }
+            }
+            catch (Exception e)
+            {
+                logger.ErrorFormat("Normal exit failed. {0}. Force killing...", e.Message);
+                Environment.Exit(1);
             }
         }
     }
