@@ -194,6 +194,15 @@ namespace Orchestrion
                 command.Append(s);
             }
             logger.Info(command.ToString());
+            try
+            {
+                logger.InfoFormat("Executable directory - {0}", Assembly.GetExecutingAssembly().Location);
+            }
+            catch (Exception e)
+            {
+                logger.Error("Can't get executable file's directory." + e.Message);   
+            }
+            
         }
 
         static ServerOptions ProcessArgs(string[] args)
