@@ -1239,6 +1239,18 @@ namespace Orchestrion.CommandProcessor
                         throw new ParameterMissingException("text");
 
                     return SearchCriteria.ByText(text);
+                case "classname":
+                    var className = context.Request.QueryString["1"];
+                    if (string.IsNullOrEmpty(className))
+                        throw new ParameterMissingException("class name");
+
+                    return SearchCriteria.ByClassName(className);
+                case "framework":
+                    var framework = context.Request.QueryString["1"];
+                    if (string.IsNullOrEmpty(framework))
+                        throw new ParameterMissingException("framework");
+
+                    return SearchCriteria.ByFramework(framework);
                 default:
                     throw new InputException("Incorrect value for 'by'");
             }
