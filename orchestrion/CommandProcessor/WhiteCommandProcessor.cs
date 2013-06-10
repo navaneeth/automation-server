@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Net;
 using System.Windows;
 using Orchestrion.Core;
@@ -252,8 +253,37 @@ namespace Orchestrion.CommandProcessor
         private void GetModalWindow()
         {
             var window = EnsureTargetIs<Window>();
-            var modalWindow = window.ModalWindow(GetSearchCriteria());            
-            context.RespondOk(Objects.Put(modalWindow));
+
+            // Modal window can be obtained either from a search criteria or from a title
+            if (IsSearchCriteriaAvailable())
+            {
+                var modalWindow = window.ModalWindow(GetSearchCriteria());
+                context.RespondOk(Objects.Put(modalWindow));
+            }
+            else
+            {
+                var title = GetParameter(1, "title");                
+                var modalWindow = window.ModalWindow(title);
+                if (modalWindow != null)
+                    context.RespondOk(Objects.Put(modalWindow));
+                else
+                {
+                    logger.Info("Locating modal window using title failed. Falling back and looking into all modal windows available");
+
+                    // White seems to have a bug to get modal window by title
+                    // We are working around this by getting all modal windows and matching title
+                    var modalWindows = window.ModalWindows();
+                    Window result = modalWindows.FirstOrDefault(mw => mw.Title == title);
+                    if (result != null)
+                        context.RespondOk(Objects.Put(result));
+                    else
+                        context.RespondOk();
+
+                    if (result == null)
+                        logger.Info("Can't locate modal window by title even in fallback mode");
+                }
+                    
+            }
         }
 
         private void GetModalWindows()
@@ -1214,6 +1244,15 @@ namespace Orchestrion.CommandProcessor
         {
             string result = context.Request.QueryString[param.ToString(CultureInfo.InvariantCulture)];
             if (string.IsNullOrEmpty(result))
+                return false;
+
+            return true;
+        }
+
+        private bool IsSearchCriteriaAvailable()
+        {
+            var by = context.Request.QueryString["by"];
+            if (string.IsNullOrEmpty(by))
                 return false;
 
             return true;
