@@ -521,6 +521,8 @@ namespace Orchestrion.CommandProcessor
             {
                 context.RespondOk((target as ProgressBar).Maximum.ToString(CultureInfo.InvariantCulture));
             }
+            else if (target is Slider)
+                context.RespondOk((target as Slider).Maximum.ToString(CultureInfo.InvariantCulture));
             else
                 throw new InvalidCommandException();            
         }
@@ -535,6 +537,8 @@ namespace Orchestrion.CommandProcessor
             {
                 context.RespondOk((target as ProgressBar).Minimum.ToString(CultureInfo.InvariantCulture));
             }
+            else if (target is Slider)
+                context.RespondOk((target as Slider).Minimum.ToString(CultureInfo.InvariantCulture));
             else
                 throw new InvalidCommandException();
         }
@@ -769,7 +773,7 @@ namespace Orchestrion.CommandProcessor
         private void GetSlider()
         {
             var window = EnsureTargetIs<IUIItemContainer>();
-            var slider = window.Get<Slider>(GetSearchCriteria());
+            var slider = window.Get<Slider>(GetSearchCriteria());            
             context.RespondOk(Objects.Put(slider));
         }
 
